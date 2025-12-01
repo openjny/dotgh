@@ -6,6 +6,9 @@
 dotgh
 dotgh.exe
 
+# GoReleaser
+dist/
+
 # Editor related
 .vscode/
 

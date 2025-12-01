@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt clean help
+.PHONY: build test lint fmt clean release-check release-dry help
 
 # Version information
 VERSION ?= dev
@@ -31,14 +31,25 @@ fmt:
 # Clean build artifacts
 clean:
 	rm -f dotgh dotgh.exe
+	rm -rf dist/
+
+# Validate goreleaser configuration
+release-check:
+	goreleaser check
+
+# Run goreleaser in snapshot mode (dry run)
+release-dry:
+	goreleaser release --snapshot --clean
 
 # Show help
 help:
 	@echo "Available targets:"
-	@echo "  build   - Build the binary"
-	@echo "  test    - Run all tests"
-	@echo "  test-v  - Run tests with verbose output"
-	@echo "  lint    - Run golangci-lint"
-	@echo "  fmt     - Format code"
-	@echo "  clean   - Remove build artifacts"
-	@echo "  help    - Show this help message"
+	@echo "  build         - Build the binary"
+	@echo "  test          - Run all tests"
+	@echo "  test-v        - Run tests with verbose output"
+	@echo "  lint          - Run golangci-lint"
+	@echo "  fmt           - Format code"
+	@echo "  clean         - Remove build artifacts"
+	@echo "  release-check - Validate goreleaser configuration"
+	@echo "  release-dry   - Run goreleaser in snapshot mode"
+	@echo "  help          - Show this help message"
