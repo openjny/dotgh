@@ -157,7 +157,7 @@ dotgh uses a YAML configuration file located at:
 You can customize which files are managed by templates by creating a `config.yaml`:
 
 ```yaml
-targets:
+includes:
   - "AGENTS.md"
   - ".github/copilot-instructions.md"
   - ".github/instructions/*.instructions.md"
@@ -186,7 +186,7 @@ Target patterns support standard glob syntax:
 Examples:
 
 ```yaml
-targets:
+includes:
   - "*.md"                              # All markdown files in root
   - ".github/prompts/*.prompt.md"       # All prompt files
   - "config/*.json"                     # All JSON files in config/

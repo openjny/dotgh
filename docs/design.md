@@ -65,7 +65,7 @@ Default files/directories managed as template components (glob patterns):
 Targets can be customized via `~/.config/dotgh/config.yaml`:
 
 ```yaml
-targets:
+includes:
   - "AGENTS.md"
   - ".github/copilot-instructions.md"
   - ".github/instructions/*.instructions.md"

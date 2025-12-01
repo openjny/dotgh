@@ -9,11 +9,11 @@ import (
 	"github.com/openjny/dotgh/internal/config"
 )
 
-// testConfig returns a config with the default test targets.
+// testConfig returns a config with the default test includes.
 // This is used across test files to avoid duplication.
 func testConfig() *config.Config {
 	return &config.Config{
-		Targets: config.DefaultTargets,
+		Includes: config.DefaultIncludes,
 	}
 }
 

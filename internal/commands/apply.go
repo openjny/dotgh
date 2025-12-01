@@ -85,7 +85,7 @@ func applyTemplate(cmd *cobra.Command, templateName, templatesDir, targetDir str
 	_, _ = fmt.Fprintf(w, "Applying template '%s'...\n", templateName)
 
 	// Expand glob patterns to get actual files in template
-	files, err := glob.ExpandPatterns(templatePath, cfg.Targets)
+	files, err := glob.ExpandPatterns(templatePath, cfg.Includes)
 	if err != nil {
 		return fmt.Errorf("expand patterns: %w", err)
 	}

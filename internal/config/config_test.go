@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestDefaultTargets(t *testing.T) {
+func TestDefaultIncludes(t *testing.T) {
 	expected := []string{
 		"AGENTS.md",
 		".github/copilot-instructions.md",
@@ -16,44 +16,44 @@ func TestDefaultTargets(t *testing.T) {
 		".vscode/mcp.json",
 	}
 
-	if !reflect.DeepEqual(DefaultTargets, expected) {
-		t.Errorf("DefaultTargets = %v, want %v", DefaultTargets, expected)
+	if !reflect.DeepEqual(DefaultIncludes, expected) {
+		t.Errorf("DefaultIncludes = %v, want %v", DefaultIncludes, expected)
 	}
 }
 
 func TestLoadFromDir(t *testing.T) {
 	tests := []struct {
-		name        string
-		configYAML  string // empty means no config file
-		wantTargets []string
-		wantErr     bool
+		name         string
+		configYAML   string // empty means no config file
+		wantIncludes []string
+		wantErr      bool
 	}{
 		{
-			name:        "no config file returns defaults",
-			configYAML:  "",
-			wantTargets: DefaultTargets,
-			wantErr:     false,
+			name:         "no config file returns defaults",
+			configYAML:   "",
+			wantIncludes: DefaultIncludes,
+			wantErr:      false,
 		},
 		{
-			name: "custom targets",
-			configYAML: `targets:
+			name: "custom includes",
+			configYAML: `includes:
   - "custom/file.md"
   - "another/*.txt"
 `,
-			wantTargets: []string{"custom/file.md", "another/*.txt"},
-			wantErr:     false,
+			wantIncludes: []string{"custom/file.md", "another/*.txt"},
+			wantErr:      false,
 		},
 		{
-			name:        "empty targets",
-			configYAML:  "targets: []\n",
-			wantTargets: []string{},
-			wantErr:     false,
+			name:         "empty includes",
+			configYAML:   "includes: []\n",
+			wantIncludes: []string{},
+			wantErr:      false,
 		},
 		{
-			name:        "invalid YAML",
-			configYAML:  "targets: [invalid yaml",
-			wantTargets: nil,
-			wantErr:     true,
+			name:         "invalid YAML",
+			configYAML:   "includes: [invalid yaml",
+			wantIncludes: nil,
+			wantErr:      true,
 		},
 	}
 
@@ -80,8 +80,8 @@ func TestLoadFromDir(t *testing.T) {
 				return
 			}
 
-			if !reflect.DeepEqual(cfg.Targets, tt.wantTargets) {
-				t.Errorf("Targets = %v, want %v", cfg.Targets, tt.wantTargets)
+			if !reflect.DeepEqual(cfg.Includes, tt.wantIncludes) {
+				t.Errorf("Includes = %v, want %v", cfg.Includes, tt.wantIncludes)
 			}
 		})
 	}

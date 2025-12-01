@@ -77,7 +77,7 @@ func pushTemplate(cmd *cobra.Command, templateName, templatesDir, sourceDir stri
 	}
 
 	// Expand glob patterns to get actual files in source directory
-	files, err := glob.ExpandPatterns(sourceDir, cfg.Targets)
+	files, err := glob.ExpandPatterns(sourceDir, cfg.Includes)
 	if err != nil {
 		return fmt.Errorf("expand patterns: %w", err)
 	}
@@ -85,7 +85,7 @@ func pushTemplate(cmd *cobra.Command, templateName, templatesDir, sourceDir stri
 	// Check if any files exist
 	if len(files) == 0 {
 		_, _ = fmt.Fprintf(w, "No target files found in current directory.\n")
-		_, _ = fmt.Fprintf(w, "Configured patterns: %v\n", cfg.Targets)
+		_, _ = fmt.Fprintf(w, "Configured patterns: %v\n", cfg.Includes)
 		return nil
 	}
 

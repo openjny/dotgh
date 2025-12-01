@@ -9,9 +9,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// DefaultTargets defines the default files/directories to copy from templates.
+// DefaultIncludes defines the default glob patterns for files to copy from templates.
 // These are used when no config file exists.
-var DefaultTargets = []string{
+var DefaultIncludes = []string{
 	"AGENTS.md",
 	".github/copilot-instructions.md",
 	".github/instructions/*.instructions.md",
@@ -21,7 +21,7 @@ var DefaultTargets = []string{
 
 // Config represents the dotgh configuration.
 type Config struct {
-	Targets []string `yaml:"targets"`
+	Includes []string `yaml:"includes"`
 }
 
 // GetConfigDir returns the path to the dotgh configuration directory.
@@ -51,7 +51,7 @@ func LoadFromDir(dir string) (*Config, error) {
 	if err != nil {
 		if os.IsNotExist(err) {
 			// Return default config if file doesn't exist
-			return &Config{Targets: DefaultTargets}, nil
+			return &Config{Includes: DefaultIncludes}, nil
 		}
 		return nil, fmt.Errorf("read config file: %w", err)
 	}
