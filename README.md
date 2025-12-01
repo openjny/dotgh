@@ -5,7 +5,25 @@
 [![License](https://img.shields.io/github/license/openjny/dotgh)](LICENSE)
 [![Latest Release](https://img.shields.io/github/v/release/openjny/dotgh)](https://github.com/openjny/dotgh/releases/latest)
 
-A CLI tool to manage `.github` directory templates for GitHub Copilot / VS Code users.
+A CLI tool to manage AI coding assistant configuration templates.
+
+## Why dotgh?
+
+If you're using AI coding assistants like GitHub Copilot or Cursor, you've probably noticed yourself creating similar config files over and over again — `copilot-instructions.md`, `.github/prompts/myprompts.md`, `AGENTS.md`, and so on...
+
+`dotgh` is a cross-platform tool that lets you save and apply these config files as templates. When starting a new project, just run `dotgh apply my-awesome-template` and you're good to go 👌.
+
+## What it manages
+
+By default, `dotgh` manages these files:
+
+- `AGENTS.md` - AI agent instructions
+- `.github/copilot-instructions.md` - GitHub Copilot instructions
+- `.github/instructions/*.instructions.md` - Custom instruction files
+- `.github/prompts/*.prompt.md` - Prompt templates
+- `.vscode/mcp.json` - VS Code MCP server configuration
+
+> Customizable via `~/.config/dotgh/config.yaml`. See [User Guide](docs/user-guide.md) for details.
 
 ## Install
 
@@ -28,7 +46,7 @@ irm https://raw.githubusercontent.com/openjny/dotgh/main/install.ps1 | iex
 ```bash
 dotgh list                  # List templates
 dotgh apply <template>      # Apply template to current directory
-dotgh push <template>       # Save .github as template
+dotgh push <template>       # Save current directory as template
 dotgh delete <template>     # Delete template
 dotgh update                # Update to latest version
 ```
