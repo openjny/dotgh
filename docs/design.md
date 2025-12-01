@@ -30,10 +30,11 @@ dotgh/
 │   └── dotgh/
 │       └── main.go       # Entry point
 ├── internal/
-│   ├── commands/         # Implementation of each subcommand (list, apply, push, delete)
+│   ├── commands/         # Implementation of each subcommand (list, apply, push, delete, version)
 │   ├── config/           # Configuration loading
 │   ├── fileutil/         # File operation utilities (Copy, ExistCheck)
-│   └── updater/          # Self-update logic
+│   ├── updater/          # Self-update logic
+│   └── version/          # Version information (set at build time via ldflags)
 ├── docs/                 # Documentation
 ├── install.sh            # Linux/macOS installer
 ├── install.ps1           # Windows installer
