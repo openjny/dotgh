@@ -24,22 +24,13 @@ Complies with the XDG Base Directory Specification.
 
 ```
 dotgh/
-├── .devcontainer/
-│   └── devcontainer.json # Development container configuration
-├── cmd/
-│   └── dotgh/
-│       └── main.go       # Entry point
+├── cmd/dotgh/            # Entry point
 ├── internal/
-│   ├── commands/         # Implementation of each subcommand (list, apply, push, delete, version)
-│   ├── config/           # Configuration loading
-│   ├── fileutil/         # File operation utilities (Copy, ExistCheck)
+│   ├── commands/         # CLI subcommands
 │   ├── updater/          # Self-update logic
-│   └── version/          # Version information (set at build time via ldflags)
+│   └── version/          # Version info (ldflags)
 ├── docs/                 # Documentation
-├── install.sh            # Linux/macOS installer
-├── install.ps1           # Windows installer
-├── go.mod
-└── README.md
+└── .goreleaser.yaml      # Release configuration
 ```
 
 ## CLI Interface
@@ -59,35 +50,15 @@ dotgh [command] [flags]
 | `update`  | None         | `-c, --check`     | Update dotgh itself to the latest version           | Implemented |
 | `version` | None         | None              | Display version information                         | Implemented |
 
-## Data Structures
+## Template Targets
 
-### Default Targets
+Default files/directories managed as template components:
 
-By default, the following files/directories are treated as template components:
+- `.github/`
+- `.vscode/`
+- `AGENTS.md`
 
-- `.github/` (directory)
-- `.vscode/` (directory)
-- `AGENTS.md` (file)
+## Command Behavior
 
-※ In the future, these will be customizable via `dotgh.yaml`.
-
-## Process Flow
-
-### Apply Flow
-
-1. Check for the existence of the template directory
-2. Scan the target files (`.github/`, etc.) within the template
-3. Copy to the current directory
-   - If existing files are present:
-     - With `-f` specified: Overwrite
-     - Without `-f` specified: Skip (display message)
-   - New files: Create
-
-### Push Flow
-
-1. Scan the target files (`.github/`, etc.) in the current directory
-2. Copy to the template directory
-   - If the template does not exist: Create new
-   - If the template exists:
-     - With `-f` specified: Overwrite
-     - Without `-f` specified: Skip (display message)
+- **apply/push**: Use `-f` flag to overwrite existing files; without it, existing files are skipped.
+- **update**: Downloads from GitHub Releases with checksum validation; skips if running dev build.
