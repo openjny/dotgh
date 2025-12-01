@@ -1,5 +1,11 @@
 # dotgh
 
+[![CI](https://github.com/openjny/dotgh/actions/workflows/ci.yml/badge.svg)](https://github.com/openjny/dotgh/actions/workflows/ci.yml)
+[![Release](https://github.com/openjny/dotgh/actions/workflows/release.yml/badge.svg)](https://github.com/openjny/dotgh/actions/workflows/release.yml)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/openjny/dotgh)](https://go.dev/)
+[![License](https://img.shields.io/github/license/openjny/dotgh)](LICENSE)
+[![Latest Release](https://img.shields.io/github/v/release/openjny/dotgh)](https://github.com/openjny/dotgh/releases/latest)
+
 A cross-platform CLI tool to manage `.github` directory for GitHub Copilot / VS Code users.
 
 ## Overview
@@ -14,19 +20,35 @@ A cross-platform CLI tool to manage `.github` directory for GitHub Copilot / VS 
 - **Cross-Platform**: Works on Windows, Linux, and macOS
 - **Self-Update**: Easily update to the latest version
 
-## Installation (Planned)
+## Installation
 
-### Linux / macOS
+### Using Go
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/openjny/dotgh/main/install.sh | bash
+go install github.com/openjny/dotgh/cmd/dotgh@latest
 ```
 
-### Windows
+### Download from GitHub Releases
 
-```powershell
-irm https://raw.githubusercontent.com/openjny/dotgh/main/install.ps1 | iex
+Download the latest binary from [GitHub Releases](https://github.com/openjny/dotgh/releases/latest).
+
+#### Linux / macOS
+
+```bash
+# Linux (amd64)
+curl -LO https://github.com/openjny/dotgh/releases/latest/download/dotgh_linux_amd64.tar.gz
+tar xzf dotgh_linux_amd64.tar.gz
+sudo mv dotgh /usr/local/bin/
+
+# macOS (Apple Silicon)
+curl -LO https://github.com/openjny/dotgh/releases/latest/download/dotgh_darwin_arm64.tar.gz
+tar xzf dotgh_darwin_arm64.tar.gz
+sudo mv dotgh /usr/local/bin/
 ```
+
+#### Windows
+
+Download `dotgh_windows_amd64.zip` from [Releases](https://github.com/openjny/dotgh/releases/latest), extract, and add to your PATH.
 
 ## Usage
 
