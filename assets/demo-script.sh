@@ -34,4 +34,12 @@ sleep 0.3
 printf '\n'
 dotgh pull bicep-mslearn-mcp
 
-sleep 1.5
+# End with prompt visible for a moment
+printf '\n$ '
+sleep 0.5
+printf ' '
+sleep 0.5
+printf ' '
+sleep 0.5
+printf ' '
+sleep 0.5
