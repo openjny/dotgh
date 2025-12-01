@@ -36,7 +36,8 @@ dotgh apply <template> [-f]     # Apply template to current directory
 dotgh push <template> [-f]      # Save current directory as template
 dotgh delete <template> [-f]    # Delete a template
 dotgh version                   # Display version information
-dotgh update                    # Update dotgh to latest version (planned)
+dotgh update                    # Update dotgh to latest version
+dotgh update --check            # Check for updates without installing
 ```
 
 ## Template Storage
