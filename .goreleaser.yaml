@@ -1,0 +1,81 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+version: 2
+
+project_name: dotgh
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - id: dotgh
+    main: ./cmd/dotgh
+    binary: dotgh
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/openjny/dotgh/internal/version.Version={{.Version}}
+      - -X github.com/openjny/dotgh/internal/version.Commit={{.ShortCommit}}
+      - -X github.com/openjny/dotgh/internal/version.Date={{.Date}}
+
+archives:
+  - id: default
+    ids:
+      - dotgh
+    # Naming convention compatible with creativeprojects/go-selfupdate
+    # Format: {name}_{os}_{arch}{.ext}
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Os }}_
+      {{- .Arch }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+
+checksum:
+  name_template: 'checksums.txt'
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - '^ci:'
+  groups:
+    - title: Features
+      regexp: '^feat'
+      order: 0
+    - title: Bug Fixes
+      regexp: '^fix'
+      order: 1
+    - title: Others
+      order: 999
+
+release:
+  github:
+    owner: openjny
+    name: dotgh
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## What's Changed
+  footer: |
+    **Full Changelog**: https://github.com/openjny/dotgh/compare/{{ .PreviousTag }}...{{ .Tag }}
