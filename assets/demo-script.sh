@@ -62,3 +62,9 @@ printf ' '
 sleep 0.5
 printf ' '
 sleep 0.5
+printf ' '
+sleep 0.5
+printf ' '
+sleep 0.5
+printf ' '
+sleep 0.5
