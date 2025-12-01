@@ -33,8 +33,9 @@ irm https://raw.githubusercontent.com/openjny/dotgh/main/install.ps1 | iex
 ```bash
 dotgh list                      # List available templates
 dotgh apply <template> [-f]     # Apply template to current directory
-dotgh push <template> [-f]      # Save current directory as template (planned)
-dotgh delete <template>         # Delete a template (planned)
+dotgh push <template> [-f]      # Save current directory as template
+dotgh delete <template> [-f]    # Delete a template
+dotgh version                   # Display version information
 dotgh update                    # Update dotgh to latest version (planned)
 ```
 

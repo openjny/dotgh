@@ -1,8 +1,16 @@
 .PHONY: build test lint fmt clean help
 
+# Version information
+VERSION ?= dev
+COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
+DATE := $(shell date -u +"%Y-%m-%d")
+LDFLAGS := -X github.com/openjny/dotgh/internal/version.Version=$(VERSION) \
+           -X github.com/openjny/dotgh/internal/version.Commit=$(COMMIT) \
+           -X github.com/openjny/dotgh/internal/version.Date=$(DATE)
+
 # Build binary
 build:
-	go build -o dotgh ./cmd/dotgh
+	go build -ldflags "$(LDFLAGS)" -o dotgh ./cmd/dotgh
 
 # Run all tests
 test:
