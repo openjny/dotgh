@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/openjny/dotgh/internal/config"
 )
 
 // setupTestSourceDir creates a source directory with the specified files.
@@ -15,35 +13,14 @@ import (
 func setupTestSourceDir(t *testing.T, files map[string]string) string {
 	t.Helper()
 	sourceDir := t.TempDir()
-
-	for path, content := range files {
-		fullPath := filepath.Join(sourceDir, path)
-		dir := filepath.Dir(fullPath)
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			t.Fatalf("failed to create directory %s: %v", dir, err)
-		}
-		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
-			t.Fatalf("failed to create file %s: %v", path, err)
-		}
-	}
-
+	createTestFiles(t, sourceDir, files)
 	return sourceDir
 }
 
 // executePushCmd runs the push command and returns the output.
 func executePushCmd(t *testing.T, templatesDir, sourceDir, templateName string, force bool) (string, error) {
 	t.Helper()
-	// Use a custom config with test-friendly patterns
-	cfg := &config.Config{
-		Targets: []string{
-			"AGENTS.md",
-			".github/copilot-instructions.md",
-			".github/instructions/*.instructions.md",
-			".github/prompts/*.prompt.md",
-			".vscode/mcp.json",
-		},
-	}
-	cmd := NewPushCmdWithConfig(templatesDir, sourceDir, cfg)
+	cmd := NewPushCmdWithConfig(templatesDir, sourceDir, testConfig())
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)

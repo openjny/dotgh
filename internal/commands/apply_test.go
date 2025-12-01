@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/openjny/dotgh/internal/config"
 )
 
 // setupTestTemplateWithFiles creates a template with the specified files/directories.
@@ -18,37 +16,14 @@ func setupTestTemplateWithFiles(t *testing.T, templateName string, files map[str
 	// Use the shared helper to create the base templates directory
 	templatesDir := setupTestTemplatesDir(t, []string{templateName})
 	templateDir := filepath.Join(templatesDir, templateName)
-
-	for path, content := range files {
-		fullPath := filepath.Join(templateDir, path)
-		dir := filepath.Dir(fullPath)
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			t.Fatalf("failed to create directory %s: %v", dir, err)
-		}
-		if content != "" || !strings.HasSuffix(path, "/") {
-			if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
-				t.Fatalf("failed to create file %s: %v", path, err)
-			}
-		}
-	}
-
+	createTestFiles(t, templateDir, files)
 	return templatesDir
 }
 
 // executeApplyCmd runs the apply command and returns the output.
 func executeApplyCmd(t *testing.T, templatesDir, targetDir, templateName string, force bool) (string, error) {
 	t.Helper()
-	// Use a custom config with test-friendly patterns
-	cfg := &config.Config{
-		Targets: []string{
-			"AGENTS.md",
-			".github/copilot-instructions.md",
-			".github/instructions/*.instructions.md",
-			".github/prompts/*.prompt.md",
-			".vscode/mcp.json",
-		},
-	}
-	cmd := NewApplyCmdWithConfig(templatesDir, targetDir, cfg)
+	cmd := NewApplyCmdWithConfig(templatesDir, targetDir, testConfig())
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
