@@ -30,6 +30,8 @@ curl -fsSL https://raw.githubusercontent.com/openjny/dotgh/main/install.sh | bas
 
 This script automatically detects your OS and architecture, downloads the appropriate binary, verifies the checksum, and installs it.
 
+> **Note**: On Windows, this script requires Git Bash, WSL, or similar Unix-like environment. For native Windows, use the [Manual Download](#windows) method instead.
+
 **Options:**
 
 ```bash
