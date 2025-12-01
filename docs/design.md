@@ -52,11 +52,29 @@ dotgh [command] [flags]
 
 ## Template Targets
 
-Default files/directories managed as template components:
+Default files/directories managed as template components (glob patterns):
 
-- `.github/`
-- `.vscode/`
 - `AGENTS.md`
+- `.github/copilot-instructions.md`
+- `.github/instructions/*.instructions.md`
+- `.github/prompts/*.prompt.md`
+- `.vscode/mcp.json`
+
+### Configuration File
+
+Targets can be customized via `~/.config/dotgh/config.yaml`:
+
+```yaml
+includes:
+  - "AGENTS.md"
+  - ".github/copilot-instructions.md"
+  - ".github/instructions/*.instructions.md"
+  - ".github/prompts/*.prompt.md"
+  - ".vscode/mcp.json"
+  - "custom/*.md"  # Add custom patterns
+```
+
+If the config file doesn't exist, default targets are used.
 
 ## Command Behavior
 

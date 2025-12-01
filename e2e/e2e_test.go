@@ -185,11 +185,11 @@ func TestE2E_FullWorkflow(t *testing.T) {
 	binary := findBinary(t)
 	_, workDir, env := setupE2EEnvironment(t)
 
-	// Create source files in work directory
+	// Create source files in work directory (using new default patterns)
 	createTestFiles(t, workDir, map[string]string{
 		"AGENTS.md":                       "# E2E Test Agents",
 		".github/copilot-instructions.md": "# Copilot Instructions",
-		".vscode/settings.json":           `{"editor.formatOnSave": true}`,
+		".vscode/mcp.json":                `{"servers": {}}`,
 	})
 
 	templateName := "e2e-test-template"
@@ -227,7 +227,7 @@ func TestE2E_FullWorkflow(t *testing.T) {
 	}
 
 	// Verify files were copied
-	expectedFiles := []string{"AGENTS.md", ".github/copilot-instructions.md", ".vscode/settings.json"}
+	expectedFiles := []string{"AGENTS.md", ".github/copilot-instructions.md", ".vscode/mcp.json"}
 	verifyFilesExist(t, applyDir, expectedFiles)
 	verifyFileContent(t, filepath.Join(applyDir, "AGENTS.md"), "# E2E Test Agents")
 
@@ -354,12 +354,13 @@ func TestE2E_CrossPlatformPaths(t *testing.T) {
 	binary := findBinary(t)
 	_, workDir, env := setupE2EEnvironment(t)
 
-	// Create nested directory structure
+	// Create nested directory structure (using new default patterns)
 	createTestFiles(t, workDir, map[string]string{
-		".github/workflows/ci.yml":       "name: CI",
-		".github/prompts/test.prompt.md": "# Prompt",
-		".vscode/tasks.json":             "{}",
-		"AGENTS.md":                      "# Agents",
+		".github/copilot-instructions.md":           "# Copilot",
+		".github/prompts/test.prompt.md":            "# Prompt",
+		".github/instructions/dev.instructions.md":  "# Instructions",
+		".vscode/mcp.json":                          `{"servers": {}}`,
+		"AGENTS.md":                                 "# Agents",
 	})
 
 	templateName := "nested-paths"
@@ -379,11 +380,12 @@ func TestE2E_CrossPlatformPaths(t *testing.T) {
 
 	// Verify all nested paths work correctly
 	expectedFiles := []string{
-		".github/workflows/ci.yml",
+		".github/copilot-instructions.md",
 		".github/prompts/test.prompt.md",
-		".vscode/tasks.json",
+		".github/instructions/dev.instructions.md",
+		".vscode/mcp.json",
 		"AGENTS.md",
 	}
 	verifyFilesExist(t, applyDir, expectedFiles)
-	verifyFileContent(t, filepath.Join(applyDir, ".github", "workflows", "ci.yml"), "name: CI")
+	verifyFileContent(t, filepath.Join(applyDir, ".github", "copilot-instructions.md"), "# Copilot")
 }

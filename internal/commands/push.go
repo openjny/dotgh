@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/openjny/dotgh/internal/config"
+	"github.com/openjny/dotgh/internal/glob"
 	"github.com/spf13/cobra"
 )
 
@@ -12,7 +14,7 @@ import (
 const (
 	pushCmdUse   = "push <template>"
 	pushCmdShort = "Save the current directory's settings as a template"
-	pushCmdLong  = "Save the current directory's settings as a template. Copies .github/, .vscode/, and AGENTS.md to the template directory."
+	pushCmdLong  = "Save the current directory's settings as a template. Copies files matching configured patterns to the template directory."
 )
 
 var pushCmd = &cobra.Command{
@@ -32,6 +34,12 @@ func init() {
 // NewPushCmd creates a new push command with custom directories.
 // This is primarily used for testing.
 func NewPushCmd(customTemplatesDir, customSourceDir string) *cobra.Command {
+	return NewPushCmdWithConfig(customTemplatesDir, customSourceDir, nil)
+}
+
+// NewPushCmdWithConfig creates a new push command with custom directories and config.
+// This is primarily used for testing.
+func NewPushCmdWithConfig(customTemplatesDir, customSourceDir string, cfg *config.Config) *cobra.Command {
 	var force bool
 	cmd := &cobra.Command{
 		Use:   pushCmdUse,
@@ -39,7 +47,7 @@ func NewPushCmd(customTemplatesDir, customSourceDir string) *cobra.Command {
 		Long:  pushCmdLong,
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return pushTemplate(cmd, args[0], customTemplatesDir, customSourceDir, force)
+			return pushTemplate(cmd, args[0], customTemplatesDir, customSourceDir, force, cfg)
 		},
 	}
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite existing files in the template")
@@ -51,27 +59,33 @@ func runPush(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("get current directory: %w", err)
 	}
-	return pushTemplate(cmd, args[0], templatesDir, cwd, pushForceFlag)
+	return pushTemplate(cmd, args[0], templatesDir, cwd, pushForceFlag, nil)
 }
 
 // pushTemplate saves the current directory's target files to a template.
-func pushTemplate(cmd *cobra.Command, templateName, templatesDir, sourceDir string, force bool) error {
+func pushTemplate(cmd *cobra.Command, templateName, templatesDir, sourceDir string, force bool, cfg *config.Config) error {
 	w := cmd.OutOrStdout()
 	templatePath := filepath.Join(templatesDir, templateName)
 
-	// Scan for target files in source directory
-	var targetsFound []string
-	for _, target := range defaultTargets {
-		srcPath := filepath.Join(sourceDir, target)
-		if _, err := os.Stat(srcPath); err == nil {
-			targetsFound = append(targetsFound, target)
+	// Load config if not provided
+	if cfg == nil {
+		var err error
+		cfg, err = config.Load()
+		if err != nil {
+			return fmt.Errorf("load config: %w", err)
 		}
 	}
 
-	// Check if any targets exist
-	if len(targetsFound) == 0 {
+	// Expand glob patterns to get actual files in source directory
+	files, err := glob.ExpandPatterns(sourceDir, cfg.Includes)
+	if err != nil {
+		return fmt.Errorf("expand patterns: %w", err)
+	}
+
+	// Check if any files exist
+	if len(files) == 0 {
 		_, _ = fmt.Fprintf(w, "No target files found in current directory.\n")
-		_, _ = fmt.Fprintf(w, "Targets: %v\n", defaultTargets)
+		_, _ = fmt.Fprintf(w, "Configured patterns: %v\n", cfg.Includes)
 		return nil
 	}
 
@@ -85,35 +99,20 @@ func pushTemplate(cmd *cobra.Command, templateName, templatesDir, sourceDir stri
 	totalCopied := 0
 	totalSkipped := 0
 
-	for _, target := range targetsFound {
-		srcPath := filepath.Join(sourceDir, target)
-		dstPath := filepath.Join(templatePath, target)
+	for _, file := range files {
+		srcPath := filepath.Join(sourceDir, file)
+		dstPath := filepath.Join(templatePath, file)
 
-		srcInfo, err := os.Stat(srcPath)
+		copied, err := copyFile(srcPath, dstPath, force)
 		if err != nil {
-			return fmt.Errorf("stat %s: %w", target, err)
+			return fmt.Errorf("copy %s: %w", file, err)
 		}
-
-		if srcInfo.IsDir() {
-			copied, skipped, err := copyDir(srcPath, dstPath, force)
-			if err != nil {
-				return fmt.Errorf("copy %s: %w", target, err)
-			}
-			totalCopied += copied
-			totalSkipped += skipped
-			_, _ = fmt.Fprintf(w, "  %s/ (%s)\n", target, formatCopyResult(copied, skipped))
+		if copied {
+			totalCopied++
+			_, _ = fmt.Fprintf(w, "  %s (copied)\n", file)
 		} else {
-			copied, err := copyFile(srcPath, dstPath, force)
-			if err != nil {
-				return fmt.Errorf("copy %s: %w", target, err)
-			}
-			if copied {
-				totalCopied++
-				_, _ = fmt.Fprintf(w, "  %s (copied)\n", target)
-			} else {
-				totalSkipped++
-				_, _ = fmt.Fprintf(w, "  %s (skipped, already exists)\n", target)
-			}
+			totalSkipped++
+			_, _ = fmt.Fprintf(w, "  %s (skipped, already exists)\n", file)
 		}
 	}
 
