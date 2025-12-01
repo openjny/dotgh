@@ -22,4 +22,5 @@ func init() {
 	rootCmd.AddCommand(applyCmd)
 	rootCmd.AddCommand(pushCmd)
 	rootCmd.AddCommand(deleteCmd)
+	rootCmd.AddCommand(versionCmd)
 }
