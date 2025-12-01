@@ -2,9 +2,9 @@
 .env
 .DS_Store
 
-# Binaries
-dotgh
-dotgh.exe
+# Binaries (root level only)
+/dotgh
+/dotgh.exe
 
 # GoReleaser
 dist/
