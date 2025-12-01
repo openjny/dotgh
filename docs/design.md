@@ -8,7 +8,7 @@ Implemented as a single-binary CLI application in Go.
 
 - **Language**: Go
 - **CLI Framework**: `spf13/cobra`
-- **Self-Update**: `creativeprojects/go-selfupdate` (planned)
+- **Self-Update**: `creativeprojects/go-selfupdate`
 - **Release**: `goreleaser` v2 (integrated with GitHub Actions)
 
 ## Directory Structure
@@ -50,14 +50,14 @@ dotgh [command] [flags]
 
 ### Command List
 
-| Command   | Arguments    | Options       | Description                                         | Status      |
-| --------- | ------------ | ------------- | --------------------------------------------------- | ----------- |
-| `list`    | None         | None          | Display a list of available templates               | Implemented |
-| `apply`   | `<template>` | `-f, --force` | Apply a template to the current directory           | Implemented |
-| `push`    | `<template>` | `-f, --force` | Save the current directory's settings as a template | Implemented |
-| `delete`  | `<template>` | `-f, --force` | Delete a template                                   | Implemented |
-| `update`  | None         | None          | Update dotgh itself to the latest version           | Planned     |
-| `version` | None         | None          | Display version information                         | Implemented |
+| Command   | Arguments    | Options           | Description                                         | Status      |
+| --------- | ------------ | ----------------- | --------------------------------------------------- | ----------- |
+| `list`    | None         | None              | Display a list of available templates               | Implemented |
+| `apply`   | `<template>` | `-f, --force`     | Apply a template to the current directory           | Implemented |
+| `push`    | `<template>` | `-f, --force`     | Save the current directory's settings as a template | Implemented |
+| `delete`  | `<template>` | `-f, --force`     | Delete a template                                   | Implemented |
+| `update`  | None         | `-c, --check`     | Update dotgh itself to the latest version           | Implemented |
+| `version` | None         | None              | Display version information                         | Implemented |
 
 ## Data Structures
 
