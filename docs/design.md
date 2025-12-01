@@ -44,7 +44,7 @@ dotgh [command] [flags]
 | Command   | Arguments    | Options           | Description                                         | Status      |
 | --------- | ------------ | ----------------- | --------------------------------------------------- | ----------- |
 | `list`    | None         | None              | Display a list of available templates               | Implemented |
-| `apply`   | `<template>` | `-f, --force`     | Apply a template to the current directory           | Implemented |
+| `pull`    | `<template>` | `-f, --force`     | Pull a template to the current directory            | Implemented |
 | `push`    | `<template>` | `-f, --force`     | Save the current directory's settings as a template | Implemented |
 | `delete`  | `<template>` | `-f, --force`     | Delete a template                                   | Implemented |
 | `update`  | None         | `-c, --check`     | Update dotgh itself to the latest version           | Implemented |
@@ -78,5 +78,5 @@ If the config file doesn't exist, default targets are used.
 
 ## Command Behavior
 
-- **apply/push**: Use `-f` flag to overwrite existing files; without it, existing files are skipped.
+- **pull/push**: Use `-f` flag to overwrite existing files; without it, existing files are skipped.
 - **update**: Downloads from GitHub Releases with checksum validation; skips if running dev build.

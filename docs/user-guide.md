@@ -86,15 +86,15 @@ List all available templates.
 dotgh list
 ```
 
-### `dotgh apply <template>`
+### `dotgh pull <template>`
 
-Apply a template to the current directory. This copies the `.github` directory from the template.
+Pull a template to the current directory. This copies the `.github` directory from the template.
 
 ```bash
-dotgh apply my-template
+dotgh pull my-template
 
 # Force overwrite existing files
-dotgh apply my-template -f
+dotgh pull my-template -f
 ```
 
 ### `dotgh push <template>`

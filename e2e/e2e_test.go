@@ -157,7 +157,7 @@ func TestE2E_HelpCommand(t *testing.T) {
 	}
 
 	// Help should list available commands
-	expectedCommands := []string{"list", "apply", "push", "delete", "update", "version"}
+	expectedCommands := []string{"list", "pull", "push", "delete", "update", "version"}
 	for _, cmd := range expectedCommands {
 		if !strings.Contains(stdout, cmd) {
 			t.Errorf("help output should contain '%s' command, got: %s", cmd, stdout)
@@ -212,24 +212,24 @@ func TestE2E_FullWorkflow(t *testing.T) {
 		t.Errorf("pushed template should appear in list, got: %s", stdout)
 	}
 
-	// Step 3: Apply to new directory
-	applyDir := filepath.Join(t.TempDir(), "apply-target")
-	if err := os.MkdirAll(applyDir, 0755); err != nil {
-		t.Fatalf("failed to create apply dir: %v", err)
+	// Step 3: Pull to new directory
+	pullDir := filepath.Join(t.TempDir(), "pull-target")
+	if err := os.MkdirAll(pullDir, 0755); err != nil {
+		t.Fatalf("failed to create pull dir: %v", err)
 	}
 
-	stdout, stderr, err = runDotgh(t, binary, []string{"apply", templateName}, applyDir, env)
+	stdout, stderr, err = runDotgh(t, binary, []string{"pull", templateName}, pullDir, env)
 	if err != nil {
-		t.Fatalf("apply failed: %v\nstdout: %s\nstderr: %s", err, stdout, stderr)
+		t.Fatalf("pull failed: %v\nstdout: %s\nstderr: %s", err, stdout, stderr)
 	}
-	if !strings.Contains(stdout, "Applying template") {
-		t.Errorf("apply output unexpected: %s", stdout)
+	if !strings.Contains(stdout, "Pulling template") {
+		t.Errorf("pull output unexpected: %s", stdout)
 	}
 
 	// Verify files were copied
 	expectedFiles := []string{"AGENTS.md", ".github/copilot-instructions.md", ".vscode/mcp.json"}
-	verifyFilesExist(t, applyDir, expectedFiles)
-	verifyFileContent(t, filepath.Join(applyDir, "AGENTS.md"), "# E2E Test Agents")
+	verifyFilesExist(t, pullDir, expectedFiles)
+	verifyFileContent(t, filepath.Join(pullDir, "AGENTS.md"), "# E2E Test Agents")
 
 	// Step 4: Delete template (with force flag)
 	stdout, stderr, err = runDotgh(t, binary, []string{"delete", templateName, "-f"}, workDir, env)
@@ -249,8 +249,8 @@ func TestE2E_FullWorkflow(t *testing.T) {
 		t.Error("deleted template should not appear in list")
 	}
 
-	// Applied files should still exist
-	verifyFilesExist(t, applyDir, expectedFiles)
+	// Pulled files should still exist
+	verifyFilesExist(t, pullDir, expectedFiles)
 }
 
 // TestE2E_ForceOverwrite tests the -f flag behavior.
@@ -293,28 +293,28 @@ func TestE2E_ForceOverwrite(t *testing.T) {
 	// Verify now version 2
 	verifyFileContent(t, filepath.Join(templatesDir, templateName, "AGENTS.md"), "# Version 2")
 
-	// Test apply with force
-	applyDir := t.TempDir()
-	createTestFiles(t, applyDir, map[string]string{
+	// Test pull with force
+	pullDir := t.TempDir()
+	createTestFiles(t, pullDir, map[string]string{
 		"AGENTS.md": "# Existing Content",
 	})
 
-	// Apply without force (should skip)
-	stdout, _, err = runDotgh(t, binary, []string{"apply", templateName}, applyDir, env)
+	// Pull without force (should skip)
+	stdout, _, err = runDotgh(t, binary, []string{"pull", templateName}, pullDir, env)
 	if err != nil {
-		t.Fatalf("apply without force failed: %v", err)
+		t.Fatalf("pull without force failed: %v", err)
 	}
 	if !strings.Contains(stdout, "skipped") {
 		t.Errorf("should skip existing without force: %s", stdout)
 	}
 
-	// Apply with force (should overwrite)
-	_, _, err = runDotgh(t, binary, []string{"apply", templateName, "-f"}, applyDir, env)
+	// Pull with force (should overwrite)
+	_, _, err = runDotgh(t, binary, []string{"pull", templateName, "-f"}, pullDir, env)
 	if err != nil {
-		t.Fatalf("apply with force failed: %v", err)
+		t.Fatalf("pull with force failed: %v", err)
 	}
 
-	verifyFileContent(t, filepath.Join(applyDir, "AGENTS.md"), "# Version 2")
+	verifyFileContent(t, filepath.Join(pullDir, "AGENTS.md"), "# Version 2")
 }
 
 // TestE2E_ErrorHandling tests error scenarios.
@@ -322,10 +322,10 @@ func TestE2E_ErrorHandling(t *testing.T) {
 	binary := findBinary(t)
 	_, workDir, env := setupE2EEnvironment(t)
 
-	// Apply non-existent template
-	stdout, stderr, err := runDotgh(t, binary, []string{"apply", "non-existent"}, workDir, env)
+	// Pull non-existent template
+	stdout, stderr, err := runDotgh(t, binary, []string{"pull", "non-existent"}, workDir, env)
 	if err == nil {
-		t.Error("apply non-existent template should fail")
+		t.Error("pull non-existent template should fail")
 	}
 	if !strings.Contains(stdout+stderr, "not found") {
 		t.Errorf("error should indicate template not found: stdout=%s stderr=%s", stdout, stderr)
@@ -356,11 +356,11 @@ func TestE2E_CrossPlatformPaths(t *testing.T) {
 
 	// Create nested directory structure (using new default patterns)
 	createTestFiles(t, workDir, map[string]string{
-		".github/copilot-instructions.md":           "# Copilot",
-		".github/prompts/test.prompt.md":            "# Prompt",
-		".github/instructions/dev.instructions.md":  "# Instructions",
-		".vscode/mcp.json":                          `{"servers": {}}`,
-		"AGENTS.md":                                 "# Agents",
+		".github/copilot-instructions.md":          "# Copilot",
+		".github/prompts/test.prompt.md":           "# Prompt",
+		".github/instructions/dev.instructions.md": "# Instructions",
+		".vscode/mcp.json":                         `{"servers": {}}`,
+		"AGENTS.md":                                "# Agents",
 	})
 
 	templateName := "nested-paths"
@@ -371,11 +371,11 @@ func TestE2E_CrossPlatformPaths(t *testing.T) {
 		t.Fatalf("push failed: %v", err)
 	}
 
-	// Apply to new directory
-	applyDir := t.TempDir()
-	_, _, err = runDotgh(t, binary, []string{"apply", templateName}, applyDir, env)
+	// Pull to new directory
+	pullDir := t.TempDir()
+	_, _, err = runDotgh(t, binary, []string{"pull", templateName}, pullDir, env)
 	if err != nil {
-		t.Fatalf("apply failed: %v", err)
+		t.Fatalf("pull failed: %v", err)
 	}
 
 	// Verify all nested paths work correctly
@@ -386,6 +386,6 @@ func TestE2E_CrossPlatformPaths(t *testing.T) {
 		".vscode/mcp.json",
 		"AGENTS.md",
 	}
-	verifyFilesExist(t, applyDir, expectedFiles)
-	verifyFileContent(t, filepath.Join(applyDir, ".github", "copilot-instructions.md"), "# Copilot")
+	verifyFilesExist(t, pullDir, expectedFiles)
+	verifyFileContent(t, filepath.Join(pullDir, ".github", "copilot-instructions.md"), "# Copilot")
 }

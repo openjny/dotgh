@@ -45,8 +45,8 @@ irm https://raw.githubusercontent.com/openjny/dotgh/main/install.ps1 | iex
 
 ```bash
 dotgh list                  # List templates
-dotgh apply <template>      # Apply template to current directory
-dotgh push <template>       # Save current directory as template
+dotgh pull <template>       # Pull template to current directory
+dotgh push <template>       # Push current directory as template
 dotgh delete <template>     # Delete template
 dotgh update                # Update to latest version
 ```
