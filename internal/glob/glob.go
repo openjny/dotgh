@@ -8,6 +8,7 @@ import (
 
 // ExpandPatterns expands glob patterns and returns matched file paths relative to baseDir.
 // Patterns that don't match any files are silently ignored.
+// Returned paths always use forward slashes for cross-platform consistency.
 func ExpandPatterns(baseDir string, patterns []string) ([]string, error) {
 	var result []string
 	seen := make(map[string]bool)
@@ -25,6 +26,9 @@ func ExpandPatterns(baseDir string, patterns []string) ([]string, error) {
 			if err != nil {
 				return nil, fmt.Errorf("get relative path: %w", err)
 			}
+
+			// Normalize to forward slashes for cross-platform consistency
+			relPath = filepath.ToSlash(relPath)
 
 			// Deduplicate
 			if !seen[relPath] {
