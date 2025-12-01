@@ -141,6 +141,59 @@ dotgh update --check
 
 ---
 
+## Configuration
+
+### Config File Location
+
+dotgh uses a YAML configuration file located at:
+
+| Platform | Location |
+|----------|----------|
+| Linux/macOS | `~/.config/dotgh/config.yaml` |
+| Windows | `%LOCALAPPDATA%\dotgh\config.yaml` |
+
+### Customizing Target Patterns
+
+You can customize which files are managed by templates by creating a `config.yaml`:
+
+```yaml
+targets:
+  - "AGENTS.md"
+  - ".github/copilot-instructions.md"
+  - ".github/instructions/*.instructions.md"
+  - ".github/prompts/*.prompt.md"
+  - ".vscode/mcp.json"
+```
+
+#### Default Targets
+
+If no config file exists, the following default patterns are used:
+
+- `AGENTS.md` - AI agent instructions
+- `.github/copilot-instructions.md` - GitHub Copilot instructions
+- `.github/instructions/*.instructions.md` - Custom instruction files
+- `.github/prompts/*.prompt.md` - Prompt templates
+- `.vscode/mcp.json` - VS Code MCP server configuration
+
+#### Glob Pattern Support
+
+Target patterns support standard glob syntax:
+
+- `*` matches any sequence of characters (except path separators)
+- `?` matches any single character
+- `[abc]` matches any character in the set
+
+Examples:
+
+```yaml
+targets:
+  - "*.md"                              # All markdown files in root
+  - ".github/prompts/*.prompt.md"       # All prompt files
+  - "config/*.json"                     # All JSON files in config/
+```
+
+---
+
 ## Template Storage
 
 Templates are stored following the XDG Base Directory Specification:
