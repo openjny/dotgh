@@ -214,25 +214,25 @@ func TestMultipleTemplatesIntegration(t *testing.T) {
 		{
 			name: "golang-template",
 			files: map[string]string{
-				"AGENTS.md":                       "# Go Agents",
-				".github/workflows/go.yml":        "name: Go CI",
-				".vscode/settings.json":           `{"go.lintTool": "golangci-lint"}`,
+				"AGENTS.md":                "# Go Agents",
+				".github/workflows/go.yml": "name: Go CI",
+				".vscode/settings.json":    `{"go.lintTool": "golangci-lint"}`,
 			},
 		},
 		{
 			name: "node-template",
 			files: map[string]string{
-				"AGENTS.md":                        "# Node Agents",
-				".github/workflows/node.yml":       "name: Node CI",
-				".vscode/settings.json":            `{"editor.defaultFormatter": "esbenp.prettier-vscode"}`,
+				"AGENTS.md":                  "# Node Agents",
+				".github/workflows/node.yml": "name: Node CI",
+				".vscode/settings.json":      `{"editor.defaultFormatter": "esbenp.prettier-vscode"}`,
 			},
 		},
 		{
 			name: "python-template",
 			files: map[string]string{
-				"AGENTS.md":                          "# Python Agents",
-				".github/workflows/python.yml":       "name: Python CI",
-				".vscode/settings.json":              `{"python.linting.enabled": true}`,
+				"AGENTS.md":                    "# Python Agents",
+				".github/workflows/python.yml": "name: Python CI",
+				".vscode/settings.json":        `{"python.linting.enabled": true}`,
 			},
 		},
 	}
@@ -342,12 +342,7 @@ func TestFullWorkflowIntegration(t *testing.T) {
 		".github/copilot-instructions.md",
 		".vscode/extensions.json",
 	}
-	for _, file := range expectedFiles {
-		path := filepath.Join(targetDir, file)
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			t.Errorf("expected file %s to exist after apply", file)
-		}
-	}
+	verifyFilesExist(t, targetDir, expectedFiles)
 
 	// 4. Delete
 	deleteOutput, err := executeDeleteCmd(t, templatesDir, templateName, "", true)
@@ -368,12 +363,7 @@ func TestFullWorkflowIntegration(t *testing.T) {
 	}
 
 	// Applied files should still exist
-	for _, file := range expectedFiles {
-		path := filepath.Join(targetDir, file)
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			t.Errorf("applied file %s should persist after template deletion", file)
-		}
-	}
+	verifyFilesExist(t, targetDir, expectedFiles)
 }
 
 // verifyFileContent checks that a file exists and has the expected content.
@@ -385,5 +375,16 @@ func verifyFileContent(t *testing.T, path, expectedContent string) {
 	}
 	if string(content) != expectedContent {
 		t.Errorf("content mismatch for %s:\nexpected: %s\ngot: %s", path, expectedContent, string(content))
+	}
+}
+
+// verifyFilesExist checks that all specified files exist in the given directory.
+func verifyFilesExist(t *testing.T, dir string, files []string) {
+	t.Helper()
+	for _, file := range files {
+		path := filepath.Join(dir, file)
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			t.Errorf("expected file %s to exist", file)
+		}
 	}
 }
