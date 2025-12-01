@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt clean release-check release-dry help
+.PHONY: build test test-v test-cover lint fmt clean release-check release-dry help
 
 # Version information
 VERSION ?= dev
@@ -19,6 +19,12 @@ test:
 # Run tests with verbose output
 test-v:
 	go test -v ./...
+
+# Run tests with coverage report
+test-cover:
+	go test -coverprofile=coverage.out ./...
+	go tool cover -func=coverage.out
+	@rm -f coverage.out
 
 # Run linter
 lint:
@@ -47,6 +53,7 @@ help:
 	@echo "  build         - Build the binary"
 	@echo "  test          - Run all tests"
 	@echo "  test-v        - Run tests with verbose output"
+	@echo "  test-cover    - Run tests with coverage report"
 	@echo "  lint          - Run golangci-lint"
 	@echo "  fmt           - Format code"
 	@echo "  clean         - Remove build artifacts"
