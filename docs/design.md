@@ -54,7 +54,7 @@ dotgh [command] [flags]
 | `list`    | None         | None          | Display a list of available templates               | Implemented |
 | `apply`   | `<template>` | `-f, --force` | Apply a template to the current directory           | Implemented |
 | `push`    | `<template>` | `-f, --force` | Save the current directory's settings as a template | Implemented |
-| `delete`  | `<template>` | `-f, --force` | Delete a template                                   | Planned     |
+| `delete`  | `<template>` | `-f, --force` | Delete a template                                   | Implemented |
 | `update`  | None         | None          | Update dotgh itself to the latest version           | Planned     |
 | `version` | None         | None          | Display version information                         | Planned     |
 
