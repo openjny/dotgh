@@ -1,11 +1,5 @@
 # General Guidelines
 
-## Quick Reference
-
-- Build: `go build ./cmd/dotgh`
-- Test: `go test ./...`
-- Lint: `golangci-lint run`
-
 ## Project Structure
 
 - `docs/` - Documentation (concepts, design, development guide)
@@ -37,3 +31,7 @@ For testing patterns and examples, see `docs/development.md`
 - Large tasks → GitHub Issue (`gh issue create`).
 
 For workflow details, see `docs/development.md`
+
+## Git
+
+- DO NOT commit anything in `main` branch directly.
