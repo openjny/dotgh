@@ -56,7 +56,7 @@ dotgh [command] [flags]
 | `push`    | `<template>` | `-f, --force` | Save the current directory's settings as a template | Implemented |
 | `delete`  | `<template>` | `-f, --force` | Delete a template                                   | Implemented |
 | `update`  | None         | None          | Update dotgh itself to the latest version           | Planned     |
-| `version` | None         | None          | Display version information                         | Planned     |
+| `version` | None         | None          | Display version information                         | Implemented |
 
 ## Data Structures
 
