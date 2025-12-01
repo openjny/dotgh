@@ -1,0 +1,7 @@
+# General
+.env
+.DS_Store
+
+# Editor related
+.github/
+.vscode/
