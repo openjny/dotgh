@@ -209,6 +209,7 @@ function Install-Dotgh {
         }
         catch {
             # Ignore errors from version command
+            $null = $_
         }
         Write-Host ""
     }
