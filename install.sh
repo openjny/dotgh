@@ -201,8 +201,7 @@ main() {
     local download_url="${GITHUB_RELEASES}/download/${version}/${filename}"
     local checksums_url="${GITHUB_RELEASES}/download/${version}/checksums.txt"
 
-    # Create temp directory
-    local tmp_dir
+    # Create temp directory (tmp_dir is intentionally global for EXIT trap)
     tmp_dir=$(mktemp -d)
     trap 'rm -rf "${tmp_dir}"' EXIT
 
