@@ -5,3 +5,6 @@
 # Editor related
 .github/
 .vscode/
+
+# AI coding
+AGENTS.md
