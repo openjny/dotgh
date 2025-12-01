@@ -48,9 +48,45 @@ func TestUpdater_IsUpdateAvailable(t *testing.T) {
 			want:           false,
 		},
 		{
+			name:           "empty current version skips update",
+			currentVersion: "",
+			latestVersion:  "1.0.0",
+			want:           false,
+		},
+		{
+			name:           "invalid current version",
+			currentVersion: "not-a-version",
+			latestVersion:  "1.0.0",
+			want:           false,
+		},
+		{
+			name:           "invalid latest version",
+			currentVersion: "1.0.0",
+			latestVersion:  "not-a-version",
+			want:           false,
+		},
+		{
 			name:           "with v prefix in current",
 			currentVersion: "v1.0.0",
 			latestVersion:  "1.1.0",
+			want:           true,
+		},
+		{
+			name:           "with v prefix in both",
+			currentVersion: "v1.0.0",
+			latestVersion:  "v2.0.0",
+			want:           true,
+		},
+		{
+			name:           "patch version update",
+			currentVersion: "1.0.0",
+			latestVersion:  "1.0.1",
+			want:           true,
+		},
+		{
+			name:           "major version update",
+			currentVersion: "1.9.9",
+			latestVersion:  "2.0.0",
 			want:           true,
 		},
 	}
