@@ -22,13 +22,33 @@ A cross-platform CLI tool to manage `.github` directory for GitHub Copilot / VS 
 
 ## Installation
 
+### Quick Install (Recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/openjny/dotgh/main/install.sh | bash
+```
+
+This script automatically detects your OS and architecture, downloads the appropriate binary, verifies the checksum, and installs it.
+
+> **Note**: On Windows, this script requires Git Bash, WSL, or similar Unix-like environment. For native Windows, use the [Manual Download](#windows) method instead.
+
+**Options:**
+
+```bash
+# Install to a custom directory
+DOTGH_INSTALL_DIR=/custom/path curl -fsSL https://raw.githubusercontent.com/openjny/dotgh/main/install.sh | bash
+
+# Install a specific version
+DOTGH_VERSION=v0.1.1 curl -fsSL https://raw.githubusercontent.com/openjny/dotgh/main/install.sh | bash
+```
+
 ### Using Go
 
 ```bash
 go install github.com/openjny/dotgh/cmd/dotgh@latest
 ```
 
-### Download from GitHub Releases
+### Manual Download
 
 Download the latest binary from [GitHub Releases](https://github.com/openjny/dotgh/releases/latest).
 
