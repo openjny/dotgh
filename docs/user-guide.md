@@ -1,0 +1,163 @@
+# User Guide
+
+## Installation
+
+### Quick Install (Recommended)
+
+#### Linux / macOS
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/openjny/dotgh/main/install.sh | bash
+```
+
+#### Windows (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/openjny/dotgh/main/install.ps1 | iex
+```
+
+### Installation Options
+
+#### Custom Installation Directory
+
+```bash
+# Linux / macOS
+DOTGH_INSTALL_DIR=/custom/path curl -fsSL https://raw.githubusercontent.com/openjny/dotgh/main/install.sh | bash
+```
+
+```powershell
+# Windows
+$env:DOTGH_INSTALL_DIR = "C:\tools\dotgh"; irm https://raw.githubusercontent.com/openjny/dotgh/main/install.ps1 | iex
+```
+
+#### Specific Version
+
+```bash
+# Linux / macOS
+DOTGH_VERSION=v0.1.1 curl -fsSL https://raw.githubusercontent.com/openjny/dotgh/main/install.sh | bash
+```
+
+```powershell
+# Windows
+$env:DOTGH_VERSION = "v0.1.1"; irm https://raw.githubusercontent.com/openjny/dotgh/main/install.ps1 | iex
+```
+
+### Alternative Installation Methods
+
+#### Using Go
+
+```bash
+go install github.com/openjny/dotgh/cmd/dotgh@latest
+```
+
+#### Manual Download
+
+Download the latest binary from [GitHub Releases](https://github.com/openjny/dotgh/releases/latest).
+
+**Linux (amd64):**
+
+```bash
+curl -LO https://github.com/openjny/dotgh/releases/latest/download/dotgh_linux_amd64.tar.gz
+tar xzf dotgh_linux_amd64.tar.gz
+sudo mv dotgh /usr/local/bin/
+```
+
+**macOS (Apple Silicon):**
+
+```bash
+curl -LO https://github.com/openjny/dotgh/releases/latest/download/dotgh_darwin_arm64.tar.gz
+tar xzf dotgh_darwin_arm64.tar.gz
+sudo mv dotgh /usr/local/bin/
+```
+
+**Windows:**
+
+Download `dotgh_windows_amd64.zip` from [Releases](https://github.com/openjny/dotgh/releases/latest), extract, and add to your PATH.
+
+---
+
+## Commands
+
+### `dotgh list`
+
+List all available templates.
+
+```bash
+dotgh list
+```
+
+### `dotgh apply <template>`
+
+Apply a template to the current directory. This copies the `.github` directory from the template.
+
+```bash
+dotgh apply my-template
+
+# Force overwrite existing files
+dotgh apply my-template -f
+```
+
+### `dotgh push <template>`
+
+Save the current directory's `.github` as a template.
+
+```bash
+dotgh push my-template
+
+# Force overwrite existing template
+dotgh push my-template -f
+```
+
+### `dotgh delete <template>`
+
+Delete a template.
+
+```bash
+dotgh delete my-template
+
+# Skip confirmation
+dotgh delete my-template -f
+```
+
+### `dotgh version`
+
+Display version information.
+
+```bash
+dotgh version
+```
+
+### `dotgh update`
+
+Update dotgh to the latest version.
+
+```bash
+# Update to latest
+dotgh update
+
+# Check for updates without installing
+dotgh update --check
+```
+
+---
+
+## Template Storage
+
+Templates are stored following the XDG Base Directory Specification:
+
+| Platform | Location |
+|----------|----------|
+| Linux/macOS | `~/.config/dotgh/templates/` |
+| Windows | `%LOCALAPPDATA%\dotgh\templates\` |
+
+---
+
+## Updating
+
+You can update `dotgh` using the built-in update command:
+
+```bash
+dotgh update
+```
+
+Or re-run the installation script to get the latest version.
