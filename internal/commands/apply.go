@@ -6,21 +6,16 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/openjny/dotgh/internal/config"
+	"github.com/openjny/dotgh/internal/glob"
 	"github.com/spf13/cobra"
 )
-
-// defaultTargets defines the files/directories to copy from templates.
-var defaultTargets = []string{
-	".github",
-	".vscode",
-	"AGENTS.md",
-}
 
 // Command metadata constants
 const (
 	applyCmdUse   = "apply <template>"
 	applyCmdShort = "Apply a template to the current directory"
-	applyCmdLong  = "Apply a template to the current directory. Copies .github/, .vscode/, and AGENTS.md from the template."
+	applyCmdLong  = "Apply a template to the current directory. Copies files matching configured patterns from the template."
 )
 
 var applyCmd = &cobra.Command{
@@ -40,6 +35,12 @@ func init() {
 // NewApplyCmd creates a new apply command with custom directories.
 // This is primarily used for testing.
 func NewApplyCmd(customTemplatesDir, customTargetDir string) *cobra.Command {
+	return NewApplyCmdWithConfig(customTemplatesDir, customTargetDir, nil)
+}
+
+// NewApplyCmdWithConfig creates a new apply command with custom directories and config.
+// This is primarily used for testing.
+func NewApplyCmdWithConfig(customTemplatesDir, customTargetDir string, cfg *config.Config) *cobra.Command {
 	var force bool
 	cmd := &cobra.Command{
 		Use:   applyCmdUse,
@@ -47,7 +48,7 @@ func NewApplyCmd(customTemplatesDir, customTargetDir string) *cobra.Command {
 		Long:  applyCmdLong,
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return applyTemplate(cmd, args[0], customTemplatesDir, customTargetDir, force)
+			return applyTemplate(cmd, args[0], customTemplatesDir, customTargetDir, force, cfg)
 		},
 	}
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite existing files")
@@ -59,11 +60,11 @@ func runApply(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("get current directory: %w", err)
 	}
-	return applyTemplate(cmd, args[0], templatesDir, cwd, forceFlag)
+	return applyTemplate(cmd, args[0], templatesDir, cwd, forceFlag, nil)
 }
 
 // applyTemplate applies the specified template to the target directory.
-func applyTemplate(cmd *cobra.Command, templateName, templatesDir, targetDir string, force bool) error {
+func applyTemplate(cmd *cobra.Command, templateName, templatesDir, targetDir string, force bool, cfg *config.Config) error {
 	w := cmd.OutOrStdout()
 	templatePath := filepath.Join(templatesDir, templateName)
 
@@ -72,44 +73,45 @@ func applyTemplate(cmd *cobra.Command, templateName, templatesDir, targetDir str
 		return fmt.Errorf("template '%s' not found", templateName)
 	}
 
+	// Load config if not provided
+	if cfg == nil {
+		var err error
+		cfg, err = config.Load()
+		if err != nil {
+			return fmt.Errorf("load config: %w", err)
+		}
+	}
+
 	_, _ = fmt.Fprintf(w, "Applying template '%s'...\n", templateName)
+
+	// Expand glob patterns to get actual files in template
+	files, err := glob.ExpandPatterns(templatePath, cfg.Targets)
+	if err != nil {
+		return fmt.Errorf("expand patterns: %w", err)
+	}
+
+	if len(files) == 0 {
+		_, _ = fmt.Fprintln(w, "  (no matching files found in template)")
+		return nil
+	}
 
 	totalCopied := 0
 	totalSkipped := 0
 
-	for _, target := range defaultTargets {
-		srcPath := filepath.Join(templatePath, target)
-		dstPath := filepath.Join(targetDir, target)
+	for _, file := range files {
+		srcPath := filepath.Join(templatePath, file)
+		dstPath := filepath.Join(targetDir, file)
 
-		// Check if source exists in template
-		srcInfo, err := os.Stat(srcPath)
-		if os.IsNotExist(err) {
-			continue // Target doesn't exist in template, skip
-		}
+		copied, err := copyFile(srcPath, dstPath, force)
 		if err != nil {
-			return fmt.Errorf("stat %s: %w", target, err)
+			return fmt.Errorf("copy %s: %w", file, err)
 		}
-
-		if srcInfo.IsDir() {
-			copied, skipped, err := copyDir(srcPath, dstPath, force)
-			if err != nil {
-				return fmt.Errorf("copy %s: %w", target, err)
-			}
-			totalCopied += copied
-			totalSkipped += skipped
-			_, _ = fmt.Fprintf(w, "  %s/ (%s)\n", target, formatCopyResult(copied, skipped))
+		if copied {
+			totalCopied++
+			_, _ = fmt.Fprintf(w, "  %s (copied)\n", file)
 		} else {
-			copied, err := copyFile(srcPath, dstPath, force)
-			if err != nil {
-				return fmt.Errorf("copy %s: %w", target, err)
-			}
-			if copied {
-				totalCopied++
-				_, _ = fmt.Fprintf(w, "  %s (copied)\n", target)
-			} else {
-				totalSkipped++
-				_, _ = fmt.Fprintf(w, "  %s (skipped, already exists)\n", target)
-			}
+			totalSkipped++
+			_, _ = fmt.Fprintf(w, "  %s (skipped, already exists)\n", file)
 		}
 	}
 
@@ -117,46 +119,6 @@ func applyTemplate(cmd *cobra.Command, templateName, templatesDir, targetDir str
 	_, _ = fmt.Fprintf(w, "Done: %d file(s) copied, %d skipped\n", totalCopied, totalSkipped)
 
 	return nil
-}
-
-// copyDir recursively copies a directory from src to dst.
-// Returns the number of files copied and skipped.
-func copyDir(src, dst string, force bool) (copied, skipped int, err error) {
-	err = filepath.WalkDir(src, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Calculate relative path
-		relPath, err := filepath.Rel(src, path)
-		if err != nil {
-			return fmt.Errorf("get relative path: %w", err)
-		}
-
-		dstPath := filepath.Join(dst, relPath)
-
-		if d.IsDir() {
-			// Create directory if it doesn't exist
-			if err := os.MkdirAll(dstPath, 0755); err != nil {
-				return fmt.Errorf("create directory %s: %w", dstPath, err)
-			}
-			return nil
-		}
-
-		// Copy file
-		fileCopied, err := copyFile(path, dstPath, force)
-		if err != nil {
-			return err
-		}
-		if fileCopied {
-			copied++
-		} else {
-			skipped++
-		}
-		return nil
-	})
-
-	return copied, skipped, err
 }
 
 // copyFile copies a single file from src to dst.
@@ -201,16 +163,4 @@ func copyFile(src, dst string, force bool) (bool, error) {
 	}
 
 	return true, nil
-}
-
-// formatCopyResult formats the copy result for display.
-func formatCopyResult(copied, skipped int) string {
-	switch {
-	case copied == 0 && skipped > 0:
-		return "skipped, already exists"
-	case skipped > 0:
-		return fmt.Sprintf("%d files copied, %d skipped", copied, skipped)
-	default:
-		return fmt.Sprintf("%d files copied", copied)
-	}
 }
