@@ -1,0 +1,53 @@
+name: 📋 Task
+description: A structured task for implementation
+title: "[Task] "
+labels: ["task"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What needs to be achieved and why.
+    validations:
+      required: true
+
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Requirements
+      description: Specific requirements. Be precise.
+      placeholder: |
+        - Add a new `list` command
+        - Display templates in table format
+        - Show template name and last modified date
+    validations:
+      required: true
+
+  - type: textarea
+    id: files
+    attributes:
+      label: Relevant Files
+      description: Files or directories to focus on.
+      placeholder: |
+        - path/to/relevant/file.go
+        - docs/related-doc.md
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: How will we know this task is complete?
+      placeholder: |
+        - [ ] Unit tests pass
+        - [ ] Command outputs expected format
+    validations:
+      required: true
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: Any rules or limitations to follow.
+      placeholder: |
+        - Follow TDD (write tests first)
+        - Do not introduce new dependencies

@@ -3,8 +3,10 @@
 .DS_Store
 
 # Editor related
-.github/
 .vscode/
 
 # AI coding
 AGENTS.md
+.github/prompts/**
+.github/instructions/**
+.github/copilot-instructions.md
