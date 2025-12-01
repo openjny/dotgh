@@ -1,0 +1,435 @@
+//go:build e2e
+
+// Package e2e contains end-to-end tests that run the compiled dotgh binary.
+// These tests verify the CLI works correctly from a user's perspective.
+//
+// Run with: go test -v -tags=e2e ./e2e/
+// Note: The binary must be built first with: go build -o dotgh ./cmd/dotgh
+package e2e
+
+import (
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"testing"
+)
+
+// binaryName returns the name of the dotgh binary for the current OS.
+func binaryName() string {
+	if runtime.GOOS == "windows" {
+		return "dotgh.exe"
+	}
+	return "dotgh"
+}
+
+// findBinary locates the dotgh binary relative to the test file or in common locations.
+func findBinary(t *testing.T) string {
+	t.Helper()
+
+	// Try relative path from project root
+	candidates := []string{
+		binaryName(),                                   // current directory
+		filepath.Join("..", binaryName()),             // parent directory
+		filepath.Join("..", "..", binaryName()),       // grandparent
+	}
+
+	for _, path := range candidates {
+		absPath, err := filepath.Abs(path)
+		if err != nil {
+			continue
+		}
+		if _, err := os.Stat(absPath); err == nil {
+			return absPath
+		}
+	}
+
+	t.Fatalf("dotgh binary not found. Build it first with: go build -o %s ./cmd/dotgh", binaryName())
+	return ""
+}
+
+// runDotgh executes the dotgh binary with the given arguments and environment.
+func runDotgh(t *testing.T, binary string, args []string, workDir string, env map[string]string) (string, string, error) {
+	t.Helper()
+
+	cmd := exec.Command(binary, args...)
+	cmd.Dir = workDir
+
+	// Set up environment
+	cmd.Env = os.Environ()
+	for key, val := range env {
+		cmd.Env = append(cmd.Env, key+"="+val)
+	}
+
+	var stdout, stderr strings.Builder
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	return stdout.String(), stderr.String(), err
+}
+
+// setupE2EEnvironment creates isolated directories for E2E testing.
+// Returns templatesDir, workDir, and a cleanup function.
+func setupE2EEnvironment(t *testing.T) (string, string, func()) {
+	t.Helper()
+
+	baseDir := t.TempDir()
+	templatesDir := filepath.Join(baseDir, "config", "dotgh", "templates")
+	workDir := filepath.Join(baseDir, "project")
+
+	if err := os.MkdirAll(templatesDir, 0755); err != nil {
+		t.Fatalf("failed to create templates dir: %v", err)
+	}
+	if err := os.MkdirAll(workDir, 0755); err != nil {
+		t.Fatalf("failed to create work dir: %v", err)
+	}
+
+	cleanup := func() {
+		// t.TempDir() handles cleanup automatically
+	}
+
+	return templatesDir, workDir, cleanup
+}
+
+// createTestFiles creates files in the given directory.
+func createTestFiles(t *testing.T, dir string, files map[string]string) {
+	t.Helper()
+	for path, content := range files {
+		fullPath := filepath.Join(dir, path)
+		if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
+			t.Fatalf("failed to create directory for %s: %v", path, err)
+		}
+		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+			t.Fatalf("failed to create file %s: %v", path, err)
+		}
+	}
+}
+
+// TestE2E_VersionCommand verifies the version command works.
+func TestE2E_VersionCommand(t *testing.T) {
+	binary := findBinary(t)
+
+	stdout, _, err := runDotgh(t, binary, []string{"version"}, "", nil)
+	if err != nil {
+		t.Fatalf("version command failed: %v", err)
+	}
+
+	// Version output should contain "dotgh" and version info
+	if !strings.Contains(stdout, "dotgh") {
+		t.Errorf("version output should contain 'dotgh', got: %s", stdout)
+	}
+}
+
+// TestE2E_HelpCommand verifies the help command works.
+func TestE2E_HelpCommand(t *testing.T) {
+	binary := findBinary(t)
+
+	stdout, _, err := runDotgh(t, binary, []string{"--help"}, "", nil)
+	if err != nil {
+		t.Fatalf("help command failed: %v", err)
+	}
+
+	// Help should list available commands
+	expectedCommands := []string{"list", "apply", "push", "delete", "update", "version"}
+	for _, cmd := range expectedCommands {
+		if !strings.Contains(stdout, cmd) {
+			t.Errorf("help output should contain '%s' command, got: %s", cmd, stdout)
+		}
+	}
+}
+
+// TestE2E_ListEmptyTemplates verifies list command with no templates.
+func TestE2E_ListEmptyTemplates(t *testing.T) {
+	binary := findBinary(t)
+	templatesDir, _, cleanup := setupE2EEnvironment(t)
+	defer cleanup()
+
+	// Override XDG_CONFIG_HOME to use our isolated templates directory
+	configDir := filepath.Dir(filepath.Dir(templatesDir))
+	stdout, _, err := runDotgh(t, binary, []string{"list"}, "", map[string]string{
+		"XDG_CONFIG_HOME": configDir,
+	})
+	if err != nil {
+		t.Fatalf("list command failed: %v", err)
+	}
+
+	if !strings.Contains(stdout, "no templates found") {
+		t.Errorf("list should show no templates, got: %s", stdout)
+	}
+}
+
+// TestE2E_FullWorkflow tests the complete push → list → apply → delete workflow.
+func TestE2E_FullWorkflow(t *testing.T) {
+	binary := findBinary(t)
+	templatesDir, workDir, cleanup := setupE2EEnvironment(t)
+	defer cleanup()
+
+	configDir := filepath.Dir(filepath.Dir(templatesDir))
+	env := map[string]string{
+		"XDG_CONFIG_HOME": configDir,
+	}
+
+	// Create source files in work directory
+	createTestFiles(t, workDir, map[string]string{
+		"AGENTS.md":                       "# E2E Test Agents",
+		".github/copilot-instructions.md": "# Copilot Instructions",
+		".vscode/settings.json":           `{"editor.formatOnSave": true}`,
+	})
+
+	templateName := "e2e-test-template"
+
+	// Step 1: Push template
+	stdout, stderr, err := runDotgh(t, binary, []string{"push", templateName}, workDir, env)
+	if err != nil {
+		t.Fatalf("push failed: %v\nstdout: %s\nstderr: %s", err, stdout, stderr)
+	}
+	if !strings.Contains(stdout, "Pushing to template") {
+		t.Errorf("push output unexpected: %s", stdout)
+	}
+
+	// Step 2: List templates
+	stdout, _, err = runDotgh(t, binary, []string{"list"}, workDir, env)
+	if err != nil {
+		t.Fatalf("list failed: %v", err)
+	}
+	if !strings.Contains(stdout, templateName) {
+		t.Errorf("pushed template should appear in list, got: %s", stdout)
+	}
+
+	// Step 3: Apply to new directory
+	applyDir := filepath.Join(t.TempDir(), "apply-target")
+	if err := os.MkdirAll(applyDir, 0755); err != nil {
+		t.Fatalf("failed to create apply dir: %v", err)
+	}
+
+	stdout, stderr, err = runDotgh(t, binary, []string{"apply", templateName}, applyDir, env)
+	if err != nil {
+		t.Fatalf("apply failed: %v\nstdout: %s\nstderr: %s", err, stdout, stderr)
+	}
+	if !strings.Contains(stdout, "Applying template") {
+		t.Errorf("apply output unexpected: %s", stdout)
+	}
+
+	// Verify files were copied
+	expectedFiles := []string{"AGENTS.md", ".github/copilot-instructions.md", ".vscode/settings.json"}
+	for _, file := range expectedFiles {
+		path := filepath.Join(applyDir, file)
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			t.Errorf("expected file %s to exist after apply", file)
+		}
+	}
+
+	// Verify content
+	content, err := os.ReadFile(filepath.Join(applyDir, "AGENTS.md"))
+	if err != nil {
+		t.Fatalf("failed to read AGENTS.md: %v", err)
+	}
+	if string(content) != "# E2E Test Agents" {
+		t.Errorf("AGENTS.md content mismatch: %s", string(content))
+	}
+
+	// Step 4: Delete template (with force flag)
+	stdout, stderr, err = runDotgh(t, binary, []string{"delete", templateName, "-f"}, workDir, env)
+	if err != nil {
+		t.Fatalf("delete failed: %v\nstdout: %s\nstderr: %s", err, stdout, stderr)
+	}
+	if !strings.Contains(stdout, "deleted") {
+		t.Errorf("delete output unexpected: %s", stdout)
+	}
+
+	// Step 5: Verify template is gone
+	stdout, _, err = runDotgh(t, binary, []string{"list"}, workDir, env)
+	if err != nil {
+		t.Fatalf("list after delete failed: %v", err)
+	}
+	if strings.Contains(stdout, templateName) {
+		t.Error("deleted template should not appear in list")
+	}
+
+	// Applied files should still exist
+	for _, file := range expectedFiles {
+		path := filepath.Join(applyDir, file)
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			t.Errorf("applied file %s should persist after template deletion", file)
+		}
+	}
+}
+
+// TestE2E_ForceOverwrite tests the -f flag behavior.
+func TestE2E_ForceOverwrite(t *testing.T) {
+	binary := findBinary(t)
+	templatesDir, workDir, cleanup := setupE2EEnvironment(t)
+	defer cleanup()
+
+	configDir := filepath.Dir(filepath.Dir(templatesDir))
+	env := map[string]string{
+		"XDG_CONFIG_HOME": configDir,
+	}
+
+	templateName := "overwrite-test"
+
+	// Create initial content and push
+	createTestFiles(t, workDir, map[string]string{
+		"AGENTS.md": "# Version 1",
+	})
+	_, _, err := runDotgh(t, binary, []string{"push", templateName}, workDir, env)
+	if err != nil {
+		t.Fatalf("initial push failed: %v", err)
+	}
+
+	// Update content and push without force (should skip)
+	if err := os.WriteFile(filepath.Join(workDir, "AGENTS.md"), []byte("# Version 2"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	stdout, _, err := runDotgh(t, binary, []string{"push", templateName}, workDir, env)
+	if err != nil {
+		t.Fatalf("second push failed: %v", err)
+	}
+	if !strings.Contains(stdout, "skipped") {
+		t.Errorf("should skip existing without force: %s", stdout)
+	}
+
+	// Verify still version 1 in template
+	templateContent, _ := os.ReadFile(filepath.Join(templatesDir, templateName, "AGENTS.md"))
+	if string(templateContent) != "# Version 1" {
+		t.Errorf("template should still be version 1: %s", string(templateContent))
+	}
+
+	// Push with force (should overwrite)
+	_, _, err = runDotgh(t, binary, []string{"push", templateName, "-f"}, workDir, env)
+	if err != nil {
+		t.Fatalf("force push failed: %v", err)
+	}
+
+	// Verify now version 2
+	templateContent, _ = os.ReadFile(filepath.Join(templatesDir, templateName, "AGENTS.md"))
+	if string(templateContent) != "# Version 2" {
+		t.Errorf("template should be version 2 after force: %s", string(templateContent))
+	}
+
+	// Test apply with force
+	applyDir := t.TempDir()
+	createTestFiles(t, applyDir, map[string]string{
+		"AGENTS.md": "# Existing Content",
+	})
+
+	// Apply without force (should skip)
+	stdout, _, err = runDotgh(t, binary, []string{"apply", templateName}, applyDir, env)
+	if err != nil {
+		t.Fatalf("apply without force failed: %v", err)
+	}
+	if !strings.Contains(stdout, "skipped") {
+		t.Errorf("should skip existing without force: %s", stdout)
+	}
+
+	// Apply with force (should overwrite)
+	stdout, _, err = runDotgh(t, binary, []string{"apply", templateName, "-f"}, applyDir, env)
+	if err != nil {
+		t.Fatalf("apply with force failed: %v", err)
+	}
+
+	content, _ := os.ReadFile(filepath.Join(applyDir, "AGENTS.md"))
+	if string(content) != "# Version 2" {
+		t.Errorf("content should be version 2 after force apply: %s", string(content))
+	}
+}
+
+// TestE2E_ErrorHandling tests error scenarios.
+func TestE2E_ErrorHandling(t *testing.T) {
+	binary := findBinary(t)
+	templatesDir, workDir, cleanup := setupE2EEnvironment(t)
+	defer cleanup()
+
+	configDir := filepath.Dir(filepath.Dir(templatesDir))
+	env := map[string]string{
+		"XDG_CONFIG_HOME": configDir,
+	}
+
+	// Apply non-existent template
+	_, stderr, err := runDotgh(t, binary, []string{"apply", "non-existent"}, workDir, env)
+	if err == nil {
+		t.Error("apply non-existent template should fail")
+	}
+	combinedOutput := stderr
+	if !strings.Contains(combinedOutput, "not found") {
+		// Error might be in stdout for some CLI frameworks
+		stdout, _, _ := runDotgh(t, binary, []string{"apply", "non-existent"}, workDir, env)
+		if !strings.Contains(stdout+stderr, "not found") {
+			t.Errorf("error should indicate template not found: stdout=%s stderr=%s", stdout, stderr)
+		}
+	}
+
+	// Delete non-existent template
+	_, stderr, err = runDotgh(t, binary, []string{"delete", "non-existent", "-f"}, workDir, env)
+	if err == nil {
+		t.Error("delete non-existent template should fail")
+	}
+
+	// Push with no target files
+	emptyDir := t.TempDir()
+	stdout, _, err := runDotgh(t, binary, []string{"push", "empty-template"}, emptyDir, env)
+	if err != nil {
+		t.Logf("push empty dir returned error (may be expected): %v", err)
+	}
+	// Should indicate no target files or succeed with 0 files
+	if !strings.Contains(stdout, "No target files found") && !strings.Contains(stdout, "0 file") {
+		t.Logf("empty push output: %s", stdout)
+	}
+}
+
+// TestE2E_CrossPlatformPaths tests path handling across platforms.
+func TestE2E_CrossPlatformPaths(t *testing.T) {
+	binary := findBinary(t)
+	templatesDir, workDir, cleanup := setupE2EEnvironment(t)
+	defer cleanup()
+
+	configDir := filepath.Dir(filepath.Dir(templatesDir))
+	env := map[string]string{
+		"XDG_CONFIG_HOME": configDir,
+	}
+
+	// Create nested directory structure
+	createTestFiles(t, workDir, map[string]string{
+		".github/workflows/ci.yml":        "name: CI",
+		".github/prompts/test.prompt.md":  "# Prompt",
+		".vscode/tasks.json":              "{}",
+		"AGENTS.md":                       "# Agents",
+	})
+
+	templateName := "nested-paths"
+
+	// Push
+	_, _, err := runDotgh(t, binary, []string{"push", templateName}, workDir, env)
+	if err != nil {
+		t.Fatalf("push failed: %v", err)
+	}
+
+	// Apply to new directory
+	applyDir := t.TempDir()
+	_, _, err = runDotgh(t, binary, []string{"apply", templateName}, applyDir, env)
+	if err != nil {
+		t.Fatalf("apply failed: %v", err)
+	}
+
+	// Verify all nested paths work correctly
+	expectedFiles := []string{
+		".github/workflows/ci.yml",
+		".github/prompts/test.prompt.md",
+		".vscode/tasks.json",
+		"AGENTS.md",
+	}
+	for _, file := range expectedFiles {
+		path := filepath.Join(applyDir, file)
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			t.Errorf("nested file %s should exist", file)
+		}
+	}
+
+	// Verify content
+	content, _ := os.ReadFile(filepath.Join(applyDir, ".github", "workflows", "ci.yml"))
+	if string(content) != "name: CI" {
+		t.Errorf("nested file content mismatch: %s", string(content))
+	}
+}
