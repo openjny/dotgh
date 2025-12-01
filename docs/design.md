@@ -6,7 +6,7 @@ Implemented as a single-binary CLI application in Go.
 
 ### Tech Stack
 
-- **Language**: Go (1.21+)
+- **Language**: Go
 - **CLI Framework**: `spf13/cobra` (recommended) or standard `flag` package
 - **Self-Update**: `minio/selfupdate` or `rhysd/go-github-selfupdate`
 - **Release**: `goreleaser` (integrated with GitHub Actions)
@@ -24,17 +24,19 @@ Complies with the XDG Base Directory Specification.
 
 ```
 dotgh/
+├── .devcontainer/
+│   └── devcontainer.json # Development container configuration
 ├── cmd/
 │   └── dotgh/
-│       └── main.go      # Entry point
+│       └── main.go       # Entry point
 ├── internal/
-│   ├── commands/        # Implementation of each subcommand (list, apply, push, delete)
-│   ├── config/          # Configuration loading
-│   ├── fileutil/        # File operation utilities (Copy, ExistCheck)
-│   └── updater/         # Self-update logic
-├── docs/                # Documentation
-├── install.sh           # Linux/macOS installer
-├── install.ps1          # Windows installer
+│   ├── commands/         # Implementation of each subcommand (list, apply, push, delete)
+│   ├── config/           # Configuration loading
+│   ├── fileutil/         # File operation utilities (Copy, ExistCheck)
+│   └── updater/          # Self-update logic
+├── docs/                 # Documentation
+├── install.sh            # Linux/macOS installer
+├── install.ps1           # Windows installer
 ├── go.mod
 └── README.md
 ```
