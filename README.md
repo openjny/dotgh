@@ -7,13 +7,17 @@
 
 A CLI tool to manage AI coding assistant configuration templates.
 
-## Why dotgh?
+<p align="center">
+  <img src="assets/demo.gif" alt="dotgh demo" width="600">
+</p>
+
+## 💡 Why dotgh?
 
 If you're using AI coding assistants like GitHub Copilot or Cursor, you've probably noticed yourself creating similar config files over and over again — `copilot-instructions.md`, `.github/prompts/myprompts.md`, `AGENTS.md`, and so on...
 
-`dotgh` is a cross-platform tool that lets you save and apply these config files as templates. When starting a new project, just run `dotgh apply my-awesome-template` and you're good to go 👌.
+`dotgh` is a cross-platform tool that lets you save and apply these config files as templates. When starting a new project, just run `dotgh pull my-awesome-template` and you're good to go 👌.
 
-## What it manages
+## 📁 What it manages
 
 By default, `dotgh` manages these files:
 
@@ -25,7 +29,7 @@ By default, `dotgh` manages these files:
 
 > Customizable via `~/.config/dotgh/config.yaml`. See [User Guide](docs/user-guide.md) for details.
 
-## Install
+## 📦 Install
 
 **Linux / macOS:**
 
@@ -41,7 +45,7 @@ irm https://raw.githubusercontent.com/openjny/dotgh/main/install.ps1 | iex
 
 > See [User Guide](docs/user-guide.md) for more installation options.
 
-## Usage
+## 🚀 Usage
 
 ```bash
 dotgh list                  # List templates
@@ -51,7 +55,7 @@ dotgh delete <template>     # Delete a template
 dotgh update                # Update dotgh to latest version
 ```
 
-## Documentation
+## 📖 Documentation
 
 - [User Guide](docs/user-guide.md) - Installation, commands, configuration
 - [Development](docs/development.md) - Contributing, testing, releases
