@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/openjny/dotgh/internal/config"
 )
 
 // setupTestTemplateWithFiles creates a template with the specified files/directories.
@@ -36,7 +38,17 @@ func setupTestTemplateWithFiles(t *testing.T, templateName string, files map[str
 // executeApplyCmd runs the apply command and returns the output.
 func executeApplyCmd(t *testing.T, templatesDir, targetDir, templateName string, force bool) (string, error) {
 	t.Helper()
-	cmd := NewApplyCmd(templatesDir, targetDir)
+	// Use a custom config with test-friendly patterns
+	cfg := &config.Config{
+		Targets: []string{
+			"AGENTS.md",
+			".github/copilot-instructions.md",
+			".github/instructions/*.instructions.md",
+			".github/prompts/*.prompt.md",
+			".vscode/mcp.json",
+		},
+	}
+	cmd := NewApplyCmdWithConfig(templatesDir, targetDir, cfg)
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
@@ -76,16 +88,28 @@ func TestApplyTemplate(t *testing.T) {
 			wantErr:       false,
 		},
 		{
-			name:         "apply template with .github directory",
+			name:         "apply template with .github copilot-instructions",
 			templateName: "github-template",
 			templateFiles: map[string]string{
 				".github/copilot-instructions.md": "# Instructions",
-				".github/workflows/ci.yml":        "name: CI",
 			},
 			existingFiles: nil,
 			force:         false,
-			wantContains:  []string{"Applying template", ".github/", "copied"},
-			wantFiles:     []string{".github/copilot-instructions.md", ".github/workflows/ci.yml"},
+			wantContains:  []string{"Applying template", "copilot-instructions.md", "copied"},
+			wantFiles:     []string{".github/copilot-instructions.md"},
+			wantErr:       false,
+		},
+		{
+			name:         "apply template with glob pattern files",
+			templateName: "glob-template",
+			templateFiles: map[string]string{
+				".github/prompts/test.prompt.md":          "# Test prompt",
+				".github/instructions/go.instructions.md": "# Go instructions",
+			},
+			existingFiles: nil,
+			force:         false,
+			wantContains:  []string{"Applying template", "prompt.md", "instructions.md", "copied"},
+			wantFiles:     []string{".github/prompts/test.prompt.md", ".github/instructions/go.instructions.md"},
 			wantErr:       false,
 		},
 		{
@@ -120,14 +144,14 @@ func TestApplyTemplate(t *testing.T) {
 			name:         "template with multiple targets",
 			templateName: "full-template",
 			templateFiles: map[string]string{
-				".github/README.md":     "# GitHub",
-				".vscode/settings.json": "{}",
-				"AGENTS.md":             "# Agents",
+				".github/copilot-instructions.md": "# Copilot",
+				".vscode/mcp.json":                "{}",
+				"AGENTS.md":                       "# Agents",
 			},
 			existingFiles: nil,
 			force:         false,
-			wantContains:  []string{".github/", ".vscode/", "AGENTS.md"},
-			wantFiles:     []string{".github/README.md", ".vscode/settings.json", "AGENTS.md"},
+			wantContains:  []string{"copilot-instructions.md", "mcp.json", "AGENTS.md"},
+			wantFiles:     []string{".github/copilot-instructions.md", ".vscode/mcp.json", "AGENTS.md"},
 			wantErr:       false,
 		},
 	}

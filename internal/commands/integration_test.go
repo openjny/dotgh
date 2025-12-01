@@ -19,9 +19,9 @@ func TestPushThenListIntegration(t *testing.T) {
 
 	// Setup: create source directory with target files
 	sourceDir := setupTestSourceDir(t, map[string]string{
-		"AGENTS.md":             "# My Agents",
-		".github/instructions":  "# Instructions",
-		".vscode/settings.json": `{"editor.formatOnSave": true}`,
+		"AGENTS.md":                       "# My Agents",
+		".github/copilot-instructions.md": "# Instructions",
+		".vscode/mcp.json":                `{"servers": {}}`,
 	})
 
 	templatesDir := t.TempDir()
@@ -56,12 +56,12 @@ func TestPushThenApplyIntegration(t *testing.T) {
 	// Setup source directory with files
 	agentsContent := "# My Custom Agents Config"
 	githubContent := "# GitHub Instructions"
-	vscodeContent := `{"editor.tabSize": 4}`
+	vscodeContent := `{"servers": {}}`
 
 	sourceDir := setupTestSourceDir(t, map[string]string{
-		"AGENTS.md":             agentsContent,
-		".github/instructions":  githubContent,
-		".vscode/settings.json": vscodeContent,
+		"AGENTS.md":                       agentsContent,
+		".github/copilot-instructions.md": githubContent,
+		".vscode/mcp.json":                vscodeContent,
 	})
 
 	templatesDir := t.TempDir()
@@ -82,8 +82,8 @@ func TestPushThenApplyIntegration(t *testing.T) {
 
 	// Step 3: Verify files were copied correctly
 	verifyFileContent(t, filepath.Join(targetDir, "AGENTS.md"), agentsContent)
-	verifyFileContent(t, filepath.Join(targetDir, ".github/instructions"), githubContent)
-	verifyFileContent(t, filepath.Join(targetDir, ".vscode/settings.json"), vscodeContent)
+	verifyFileContent(t, filepath.Join(targetDir, ".github/copilot-instructions.md"), githubContent)
+	verifyFileContent(t, filepath.Join(targetDir, ".vscode/mcp.json"), vscodeContent)
 }
 
 // TestApplyThenDeleteIntegration verifies the apply → delete workflow.
@@ -214,25 +214,25 @@ func TestMultipleTemplatesIntegration(t *testing.T) {
 		{
 			name: "golang-template",
 			files: map[string]string{
-				"AGENTS.md":                "# Go Agents",
-				".github/workflows/go.yml": "name: Go CI",
-				".vscode/settings.json":    `{"go.lintTool": "golangci-lint"}`,
+				"AGENTS.md":                       "# Go Agents",
+				".github/copilot-instructions.md": "# Go Copilot",
+				".vscode/mcp.json":                `{"servers": {"go": {}}}`,
 			},
 		},
 		{
 			name: "node-template",
 			files: map[string]string{
-				"AGENTS.md":                  "# Node Agents",
-				".github/workflows/node.yml": "name: Node CI",
-				".vscode/settings.json":      `{"editor.defaultFormatter": "esbenp.prettier-vscode"}`,
+				"AGENTS.md":                       "# Node Agents",
+				".github/copilot-instructions.md": "# Node Copilot",
+				".vscode/mcp.json":                `{"servers": {"node": {}}}`,
 			},
 		},
 		{
 			name: "python-template",
 			files: map[string]string{
-				"AGENTS.md":                    "# Python Agents",
-				".github/workflows/python.yml": "name: Python CI",
-				".vscode/settings.json":        `{"python.linting.enabled": true}`,
+				"AGENTS.md":                       "# Python Agents",
+				".github/copilot-instructions.md": "# Python Copilot",
+				".vscode/mcp.json":                `{"servers": {"python": {}}}`,
 			},
 		},
 	}
@@ -305,7 +305,7 @@ func TestFullWorkflowIntegration(t *testing.T) {
 	sourceDir := setupTestSourceDir(t, map[string]string{
 		"AGENTS.md":                       "# Complete Workflow Agents",
 		".github/copilot-instructions.md": "# Copilot Instructions",
-		".vscode/extensions.json":         `{"recommendations": ["golang.go"]}`,
+		".vscode/mcp.json":                `{"servers": {}}`,
 	})
 
 	// 1. Push
@@ -340,7 +340,7 @@ func TestFullWorkflowIntegration(t *testing.T) {
 	expectedFiles := []string{
 		"AGENTS.md",
 		".github/copilot-instructions.md",
-		".vscode/extensions.json",
+		".vscode/mcp.json",
 	}
 	verifyFilesExist(t, targetDir, expectedFiles)
 

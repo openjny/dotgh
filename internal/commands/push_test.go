@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/openjny/dotgh/internal/config"
 )
 
 // setupTestSourceDir creates a source directory with the specified files.
@@ -31,7 +33,17 @@ func setupTestSourceDir(t *testing.T, files map[string]string) string {
 // executePushCmd runs the push command and returns the output.
 func executePushCmd(t *testing.T, templatesDir, sourceDir, templateName string, force bool) (string, error) {
 	t.Helper()
-	cmd := NewPushCmd(templatesDir, sourceDir)
+	// Use a custom config with test-friendly patterns
+	cfg := &config.Config{
+		Targets: []string{
+			"AGENTS.md",
+			".github/copilot-instructions.md",
+			".github/instructions/*.instructions.md",
+			".github/prompts/*.prompt.md",
+			".vscode/mcp.json",
+		},
+	}
+	cmd := NewPushCmdWithConfig(templatesDir, sourceDir, cfg)
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
@@ -51,7 +63,7 @@ func TestPushNewTemplate(t *testing.T) {
 	sourceDir := setupTestSourceDir(t, map[string]string{
 		"AGENTS.md":                       "# My Agents",
 		".github/copilot-instructions.md": "# Instructions",
-		".vscode/settings.json":           `{"editor.formatOnSave": true}`,
+		".vscode/mcp.json":                `{"servers": {}}`,
 	})
 
 	templatesDir := t.TempDir()
@@ -80,7 +92,7 @@ func TestPushNewTemplate(t *testing.T) {
 	expectedFiles := []string{
 		"AGENTS.md",
 		".github/copilot-instructions.md",
-		".vscode/settings.json",
+		".vscode/mcp.json",
 	}
 	for _, file := range expectedFiles {
 		fullPath := filepath.Join(templateDir, file)
@@ -196,9 +208,9 @@ func TestPushRequiresTemplateName(t *testing.T) {
 
 func TestPushWithGitHubDir(t *testing.T) {
 	sourceDir := setupTestSourceDir(t, map[string]string{
-		".github/copilot-instructions.md": "# Instructions",
-		".github/workflows/ci.yml":        "name: CI",
-		".github/prompts/test.prompt.md":  "# Test Prompt",
+		".github/copilot-instructions.md":         "# Instructions",
+		".github/prompts/test.prompt.md":          "# Test Prompt",
+		".github/instructions/go.instructions.md": "# Go Instructions",
 	})
 
 	templatesDir := t.TempDir()
@@ -208,11 +220,11 @@ func TestPushWithGitHubDir(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Check all .github files were copied
+	// Check matching .github files were copied (only those matching patterns)
 	expectedFiles := []string{
 		".github/copilot-instructions.md",
-		".github/workflows/ci.yml",
 		".github/prompts/test.prompt.md",
+		".github/instructions/go.instructions.md",
 	}
 	templateDir := filepath.Join(templatesDir, "github-only")
 	for _, file := range expectedFiles {
@@ -223,10 +235,9 @@ func TestPushWithGitHubDir(t *testing.T) {
 	}
 }
 
-func TestPushWithVSCodeDir(t *testing.T) {
+func TestPushWithVSCodeMcpJson(t *testing.T) {
 	sourceDir := setupTestSourceDir(t, map[string]string{
-		".vscode/settings.json":   `{"editor.formatOnSave": true}`,
-		".vscode/extensions.json": `{"recommendations": []}`,
+		".vscode/mcp.json": `{"servers": {}}`,
 	})
 
 	templatesDir := t.TempDir()
@@ -236,17 +247,11 @@ func TestPushWithVSCodeDir(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Check all .vscode files were copied
-	expectedFiles := []string{
-		".vscode/settings.json",
-		".vscode/extensions.json",
-	}
+	// Check mcp.json was copied
 	templateDir := filepath.Join(templatesDir, "vscode-only")
-	for _, file := range expectedFiles {
-		fullPath := filepath.Join(templateDir, file)
-		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-			t.Errorf("expected file %s to exist", file)
-		}
+	fullPath := filepath.Join(templateDir, ".vscode/mcp.json")
+	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+		t.Errorf("expected file .vscode/mcp.json to exist")
 	}
 }
 
@@ -280,9 +285,9 @@ func TestPushWithAgentsMdOnly(t *testing.T) {
 func TestPushPreservesFileContent(t *testing.T) {
 	// Test that file content is correctly preserved during push
 	expectedContent := map[string]string{
-		"AGENTS.md":             "# Agents\n\nSome content here",
-		".github/instructions":  "Line 1\nLine 2\nLine 3",
-		".vscode/settings.json": `{"key": "value", "nested": {"a": 1}}`,
+		"AGENTS.md":                       "# Agents\n\nSome content here",
+		".github/copilot-instructions.md": "Line 1\nLine 2\nLine 3",
+		".vscode/mcp.json":                `{"key": "value", "nested": {"a": 1}}`,
 	}
 
 	sourceDir := setupTestSourceDir(t, expectedContent)
