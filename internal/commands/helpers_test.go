@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -38,20 +37,4 @@ func createTestFiles(t *testing.T, basePath string, files map[string]string) {
 	for path, content := range files {
 		createTestFile(t, basePath, path, content)
 	}
-}
-
-// executeCommand runs a cobra command and captures its output.
-func executeCommand(t *testing.T, cmd interface {
-	SetOut(*bytes.Buffer)
-	SetErr(*bytes.Buffer)
-	SetArgs([]string)
-	Execute() error
-}, args ...string) (string, error) {
-	t.Helper()
-	var buf bytes.Buffer
-	cmd.SetOut(&buf)
-	cmd.SetErr(&buf)
-	cmd.SetArgs(args)
-	err := cmd.Execute()
-	return buf.String(), err
 }
