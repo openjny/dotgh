@@ -1,11 +1,10 @@
 #!/bin/bash
 # Record demo using asciinema
-# Usage: ./record-demo.sh
+# Usage: ./assets/record-demo.sh (from project root)
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR/.."
 
 # Ensure mock dotgh is available
 export PATH="$SCRIPT_DIR:$PATH"
@@ -14,11 +13,10 @@ export PATH="$SCRIPT_DIR:$PATH"
 asciinema rec --overwrite -c "$SCRIPT_DIR/demo-script.sh" "$SCRIPT_DIR/demo.cast"
 
 # Convert to SVG
-svg-term --in "$SCRIPT_DIR/demo.cast" --out assets/demo.svg \
+svg-term --in "$SCRIPT_DIR/demo.cast" --out "$SCRIPT_DIR/demo.svg" \
   --window \
   --width 80 \
-  --height 20 \
-  --padding 10 \
-  --term iterm2
+  --height 24 \
+  --padding 10
 
-echo "Demo recorded: assets/demo.svg"
+echo "Demo recorded: $SCRIPT_DIR/demo.svg"
