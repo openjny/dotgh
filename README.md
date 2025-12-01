@@ -49,7 +49,20 @@ Templates are stored following the XDG Base Directory Specification:
 ## Development
 
 ```bash
-make build    # Build the binary
-make test     # Run tests
-make lint     # Run linter
+make build          # Build the binary
+make test           # Run tests
+make lint           # Run linter
+make release-check  # Validate goreleaser configuration
+make release-dry    # Run goreleaser in snapshot mode
 ```
+
+## Releases
+
+Releases are automated via [GoReleaser](https://goreleaser.com/) and GitHub Actions. To create a new release:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+This will automatically build binaries for all supported platforms and create a GitHub Release.

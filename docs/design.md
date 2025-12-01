@@ -8,8 +8,8 @@ Implemented as a single-binary CLI application in Go.
 
 - **Language**: Go
 - **CLI Framework**: `spf13/cobra`
-- **Self-Update**: `minio/selfupdate` or `rhysd/go-github-selfupdate` (planned)
-- **Release**: `goreleaser` (integrated with GitHub Actions)
+- **Self-Update**: `creativeprojects/go-selfupdate` (planned)
+- **Release**: `goreleaser` v2 (integrated with GitHub Actions)
 
 ## Directory Structure
 
