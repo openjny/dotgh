@@ -20,10 +20,10 @@ func setupTestTemplateWithFiles(t *testing.T, templateName string, files map[str
 	return templatesDir
 }
 
-// executeApplyCmd runs the apply command and returns the output.
-func executeApplyCmd(t *testing.T, templatesDir, targetDir, templateName string, force bool) (string, error) {
+// executePullCmd runs the pull command and returns the output.
+func executePullCmd(t *testing.T, templatesDir, targetDir, templateName string, force bool) (string, error) {
 	t.Helper()
-	cmd := NewApplyCmdWithConfig(templatesDir, targetDir, testConfig())
+	cmd := NewPullCmdWithConfig(templatesDir, targetDir, testConfig())
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
@@ -38,7 +38,7 @@ func executeApplyCmd(t *testing.T, templatesDir, targetDir, templateName string,
 	return buf.String(), err
 }
 
-func TestApplyTemplate(t *testing.T) {
+func TestPullTemplate(t *testing.T) {
 	tests := []struct {
 		name            string
 		templateName    string
@@ -47,35 +47,35 @@ func TestApplyTemplate(t *testing.T) {
 		force           bool
 		wantContains    []string
 		wantNotContains []string
-		wantFiles       []string // files that should exist after apply
+		wantFiles       []string // files that should exist after pull
 		wantErr         bool
 	}{
 		{
-			name:         "apply template with AGENTS.md",
+			name:         "pull template with AGENTS.md",
 			templateName: "my-template",
 			templateFiles: map[string]string{
 				"AGENTS.md": "# My Agents",
 			},
 			existingFiles: nil,
 			force:         false,
-			wantContains:  []string{"Applying template", "my-template", "AGENTS.md", "copied"},
+			wantContains:  []string{"Pulling template", "my-template", "AGENTS.md", "copied"},
 			wantFiles:     []string{"AGENTS.md"},
 			wantErr:       false,
 		},
 		{
-			name:         "apply template with .github copilot-instructions",
+			name:         "pull template with .github copilot-instructions",
 			templateName: "github-template",
 			templateFiles: map[string]string{
 				".github/copilot-instructions.md": "# Instructions",
 			},
 			existingFiles: nil,
 			force:         false,
-			wantContains:  []string{"Applying template", "copilot-instructions.md", "copied"},
+			wantContains:  []string{"Pulling template", "copilot-instructions.md", "copied"},
 			wantFiles:     []string{".github/copilot-instructions.md"},
 			wantErr:       false,
 		},
 		{
-			name:         "apply template with glob pattern files",
+			name:         "pull template with glob pattern files",
 			templateName: "glob-template",
 			templateFiles: map[string]string{
 				".github/prompts/test.prompt.md":          "# Test prompt",
@@ -83,7 +83,7 @@ func TestApplyTemplate(t *testing.T) {
 			},
 			existingFiles: nil,
 			force:         false,
-			wantContains:  []string{"Applying template", "prompt.md", "instructions.md", "copied"},
+			wantContains:  []string{"Pulling template", "prompt.md", "instructions.md", "copied"},
 			wantFiles:     []string{".github/prompts/test.prompt.md", ".github/instructions/go.instructions.md"},
 			wantErr:       false,
 		},
@@ -150,11 +150,11 @@ func TestApplyTemplate(t *testing.T) {
 			}
 
 			// Execute
-			output, err := executeApplyCmd(t, templatesDir, targetDir, tt.templateName, tt.force)
+			output, err := executePullCmd(t, templatesDir, targetDir, tt.templateName, tt.force)
 
 			// Check error
 			if (err != nil) != tt.wantErr {
-				t.Errorf("apply error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("pull error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -183,11 +183,11 @@ func TestApplyTemplate(t *testing.T) {
 	}
 }
 
-func TestApplyTemplateNotFound(t *testing.T) {
+func TestPullTemplateNotFound(t *testing.T) {
 	templatesDir := setupTestTemplatesDir(t, []string{})
 	targetDir := t.TempDir()
 
-	output, err := executeApplyCmd(t, templatesDir, targetDir, "non-existent", false)
+	output, err := executePullCmd(t, templatesDir, targetDir, "non-existent", false)
 
 	if err == nil {
 		t.Error("expected error for non-existent template")
@@ -198,11 +198,11 @@ func TestApplyTemplateNotFound(t *testing.T) {
 	}
 }
 
-func TestApplyRequiresTemplateName(t *testing.T) {
+func TestPullRequiresTemplateName(t *testing.T) {
 	templatesDir := setupTestTemplatesDir(t, []string{"my-template"})
 	targetDir := t.TempDir()
 
-	cmd := NewApplyCmd(templatesDir, targetDir)
+	cmd := NewPullCmd(templatesDir, targetDir)
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
@@ -215,7 +215,7 @@ func TestApplyRequiresTemplateName(t *testing.T) {
 	}
 }
 
-func TestApplyPreservesExistingContent(t *testing.T) {
+func TestPullPreservesExistingContent(t *testing.T) {
 	// When skip happens, existing file content should be preserved
 	templatesDir := setupTestTemplateWithFiles(t, "my-template", map[string]string{
 		"AGENTS.md": "# New Content",
@@ -227,7 +227,7 @@ func TestApplyPreservesExistingContent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err := executeApplyCmd(t, templatesDir, targetDir, "my-template", false)
+	_, err := executePullCmd(t, templatesDir, targetDir, "my-template", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -243,7 +243,7 @@ func TestApplyPreservesExistingContent(t *testing.T) {
 	}
 }
 
-func TestApplyOverwritesWithForce(t *testing.T) {
+func TestPullOverwritesWithForce(t *testing.T) {
 	newContent := "# New Content"
 	templatesDir := setupTestTemplateWithFiles(t, "my-template", map[string]string{
 		"AGENTS.md": newContent,
@@ -254,7 +254,7 @@ func TestApplyOverwritesWithForce(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err := executeApplyCmd(t, templatesDir, targetDir, "my-template", true)
+	_, err := executePullCmd(t, templatesDir, targetDir, "my-template", true)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

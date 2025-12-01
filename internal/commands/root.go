@@ -19,7 +19,7 @@ func Execute() error {
 
 func init() {
 	rootCmd.AddCommand(listCmd)
-	rootCmd.AddCommand(applyCmd)
+	rootCmd.AddCommand(pullCmd)
 	rootCmd.AddCommand(pushCmd)
 	rootCmd.AddCommand(deleteCmd)
 	rootCmd.AddCommand(versionCmd)

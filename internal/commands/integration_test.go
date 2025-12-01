@@ -47,8 +47,8 @@ func TestPushThenListIntegration(t *testing.T) {
 	}
 }
 
-// TestPushThenApplyIntegration verifies the push → apply workflow.
-func TestPushThenApplyIntegration(t *testing.T) {
+// TestPushThenPullIntegration verifies the push → pull workflow.
+func TestPushThenPullIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
@@ -73,11 +73,11 @@ func TestPushThenApplyIntegration(t *testing.T) {
 		t.Fatalf("push failed: %v", err)
 	}
 
-	// Step 2: Apply template to a new target directory
+	// Step 2: Pull template to a new target directory
 	targetDir := t.TempDir()
-	_, err = executeApplyCmd(t, templatesDir, targetDir, templateName, false)
+	_, err = executePullCmd(t, templatesDir, targetDir, templateName, false)
 	if err != nil {
-		t.Fatalf("apply failed: %v", err)
+		t.Fatalf("pull failed: %v", err)
 	}
 
 	// Step 3: Verify files were copied correctly
@@ -86,8 +86,8 @@ func TestPushThenApplyIntegration(t *testing.T) {
 	verifyFileContent(t, filepath.Join(targetDir, ".vscode/mcp.json"), vscodeContent)
 }
 
-// TestApplyThenDeleteIntegration verifies the apply → delete workflow.
-func TestApplyThenDeleteIntegration(t *testing.T) {
+// TestPullThenDeleteIntegration verifies the pull → delete workflow.
+func TestPullThenDeleteIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
@@ -98,16 +98,16 @@ func TestApplyThenDeleteIntegration(t *testing.T) {
 	})
 	templateName := "deletable-template"
 
-	// Step 1: Apply template to target directory
+	// Step 1: Pull template to target directory
 	targetDir := t.TempDir()
-	_, err := executeApplyCmd(t, templatesDir, targetDir, templateName, false)
+	_, err := executePullCmd(t, templatesDir, targetDir, templateName, false)
 	if err != nil {
-		t.Fatalf("apply failed: %v", err)
+		t.Fatalf("pull failed: %v", err)
 	}
 
 	// Verify file exists in target
 	if _, err := os.Stat(filepath.Join(targetDir, "AGENTS.md")); os.IsNotExist(err) {
-		t.Fatal("AGENTS.md should exist after apply")
+		t.Fatal("AGENTS.md should exist after pull")
 	}
 
 	// Step 2: Delete the template (with force flag to skip confirmation)
@@ -122,13 +122,13 @@ func TestApplyThenDeleteIntegration(t *testing.T) {
 		t.Errorf("template directory should be deleted")
 	}
 
-	// Step 4: Applied files should still exist (delete only removes template, not applied files)
+	// Step 4: Pulled files should still exist (delete only removes template, not pulled files)
 	if _, err := os.Stat(filepath.Join(targetDir, "AGENTS.md")); os.IsNotExist(err) {
-		t.Error("applied files should persist after template deletion")
+		t.Error("pulled files should persist after template deletion")
 	}
 }
 
-// TestForceOverwriteIntegration verifies the -f flag behavior across push and apply.
+// TestForceOverwriteIntegration verifies the -f flag behavior across push and pull.
 func TestForceOverwriteIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
@@ -170,16 +170,16 @@ func TestForceOverwriteIntegration(t *testing.T) {
 	// Verify now version 2
 	verifyFileContent(t, filepath.Join(templatesDir, templateName, "AGENTS.md"), "# Version 2")
 
-	// Step 4: Apply to target directory
+	// Step 4: Pull to target directory
 	targetDir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(targetDir, "AGENTS.md"), []byte("# Existing"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
-	// Apply without force (should skip)
-	output, err = executeApplyCmd(t, templatesDir, targetDir, templateName, false)
+	// Pull without force (should skip)
+	output, err = executePullCmd(t, templatesDir, targetDir, templateName, false)
 	if err != nil {
-		t.Fatalf("apply without force failed: %v", err)
+		t.Fatalf("pull without force failed: %v", err)
 	}
 	if !strings.Contains(output, "skipped") {
 		t.Errorf("should skip existing file without force, got:\n%s", output)
@@ -188,10 +188,10 @@ func TestForceOverwriteIntegration(t *testing.T) {
 	// Verify still existing content
 	verifyFileContent(t, filepath.Join(targetDir, "AGENTS.md"), "# Existing")
 
-	// Apply with force (should overwrite)
-	_, err = executeApplyCmd(t, templatesDir, targetDir, templateName, true)
+	// Pull with force (should overwrite)
+	_, err = executePullCmd(t, templatesDir, targetDir, templateName, true)
 	if err != nil {
-		t.Fatalf("apply with force failed: %v", err)
+		t.Fatalf("pull with force failed: %v", err)
 	}
 
 	// Verify now version 2
@@ -261,12 +261,12 @@ func TestMultipleTemplatesIntegration(t *testing.T) {
 		t.Errorf("should show 3 templates found, got:\n%s", output)
 	}
 
-	// Apply each template to separate directories and verify
+	// Pull each template to separate directories and verify
 	for _, tmpl := range templates {
 		targetDir := t.TempDir()
-		_, err := executeApplyCmd(t, templatesDir, targetDir, tmpl.name, false)
+		_, err := executePullCmd(t, templatesDir, targetDir, tmpl.name, false)
 		if err != nil {
-			t.Fatalf("apply %s failed: %v", tmpl.name, err)
+			t.Fatalf("pull %s failed: %v", tmpl.name, err)
 		}
 
 		// Verify AGENTS.md content is correct
@@ -326,17 +326,17 @@ func TestFullWorkflowIntegration(t *testing.T) {
 		t.Errorf("template not in list: %s", listOutput)
 	}
 
-	// 3. Apply
+	// 3. Pull
 	targetDir := t.TempDir()
-	applyOutput, err := executeApplyCmd(t, templatesDir, targetDir, templateName, false)
+	pullOutput, err := executePullCmd(t, templatesDir, targetDir, templateName, false)
 	if err != nil {
-		t.Fatalf("apply failed: %v", err)
+		t.Fatalf("pull failed: %v", err)
 	}
-	if !strings.Contains(applyOutput, "Applying template") {
-		t.Errorf("apply output unexpected: %s", applyOutput)
+	if !strings.Contains(pullOutput, "Pulling template") {
+		t.Errorf("pull output unexpected: %s", pullOutput)
 	}
 
-	// Verify applied files
+	// Verify pulled files
 	expectedFiles := []string{
 		"AGENTS.md",
 		".github/copilot-instructions.md",

@@ -16,7 +16,7 @@ This will shorten the setup time at the start of a project and make it easy to d
 - **Target Platforms**: Windows, Linux, macOS (Cross-platform)
 - **Key Features**:
   - List templates
-  - Apply templates (Apply)
+  - Pull templates (Pull)
   - Update templates (Push / Update)
   - Delete templates (Delete)
   - Self-update function
@@ -30,7 +30,7 @@ This will shorten the setup time at the start of a project and make it easy to d
    - Default targets for templates should be `.github/`, `.vscode/`, and `AGENTS.md`.
 2. **CLI Operations**
    - `list`: Display available templates.
-   - `apply`: Expand the specified template into the current directory (option to skip/overwrite existing files).
+   - `pull`: Pull the specified template into the current directory (option to skip/overwrite existing files).
    - `push`: Save/update the current directory's settings as a template.
    - `delete`: Delete a template.
 3. **Self-Update**

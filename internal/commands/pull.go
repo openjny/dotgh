@@ -13,58 +13,58 @@ import (
 
 // Command metadata constants
 const (
-	applyCmdUse   = "apply <template>"
-	applyCmdShort = "Apply a template to the current directory"
-	applyCmdLong  = "Apply a template to the current directory. Copies files matching configured patterns from the template."
+	pullCmdUse   = "pull <template>"
+	pullCmdShort = "Pull a template to the current directory"
+	pullCmdLong  = "Pull a template to the current directory. Copies files matching configured patterns from the template."
 )
 
-var applyCmd = &cobra.Command{
-	Use:   applyCmdUse,
-	Short: applyCmdShort,
-	Long:  applyCmdLong,
+var pullCmd = &cobra.Command{
+	Use:   pullCmdUse,
+	Short: pullCmdShort,
+	Long:  pullCmdLong,
 	Args:  cobra.ExactArgs(1),
-	RunE:  runApply,
+	RunE:  runPull,
 }
 
-var forceFlag bool
+var pullForceFlag bool
 
 func init() {
-	applyCmd.Flags().BoolVarP(&forceFlag, "force", "f", false, "Overwrite existing files")
+	pullCmd.Flags().BoolVarP(&pullForceFlag, "force", "f", false, "Overwrite existing files")
 }
 
-// NewApplyCmd creates a new apply command with custom directories.
+// NewPullCmd creates a new pull command with custom directories.
 // This is primarily used for testing.
-func NewApplyCmd(customTemplatesDir, customTargetDir string) *cobra.Command {
-	return NewApplyCmdWithConfig(customTemplatesDir, customTargetDir, nil)
+func NewPullCmd(customTemplatesDir, customTargetDir string) *cobra.Command {
+	return NewPullCmdWithConfig(customTemplatesDir, customTargetDir, nil)
 }
 
-// NewApplyCmdWithConfig creates a new apply command with custom directories and config.
+// NewPullCmdWithConfig creates a new pull command with custom directories and config.
 // This is primarily used for testing.
-func NewApplyCmdWithConfig(customTemplatesDir, customTargetDir string, cfg *config.Config) *cobra.Command {
+func NewPullCmdWithConfig(customTemplatesDir, customTargetDir string, cfg *config.Config) *cobra.Command {
 	var force bool
 	cmd := &cobra.Command{
-		Use:   applyCmdUse,
-		Short: applyCmdShort,
-		Long:  applyCmdLong,
+		Use:   pullCmdUse,
+		Short: pullCmdShort,
+		Long:  pullCmdLong,
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return applyTemplate(cmd, args[0], customTemplatesDir, customTargetDir, force, cfg)
+			return pullTemplate(cmd, args[0], customTemplatesDir, customTargetDir, force, cfg)
 		},
 	}
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite existing files")
 	return cmd
 }
 
-func runApply(cmd *cobra.Command, args []string) error {
+func runPull(cmd *cobra.Command, args []string) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("get current directory: %w", err)
 	}
-	return applyTemplate(cmd, args[0], templatesDir, cwd, forceFlag, nil)
+	return pullTemplate(cmd, args[0], templatesDir, cwd, pullForceFlag, nil)
 }
 
-// applyTemplate applies the specified template to the target directory.
-func applyTemplate(cmd *cobra.Command, templateName, templatesDir, targetDir string, force bool, cfg *config.Config) error {
+// pullTemplate pulls the specified template to the target directory.
+func pullTemplate(cmd *cobra.Command, templateName, templatesDir, targetDir string, force bool, cfg *config.Config) error {
 	w := cmd.OutOrStdout()
 	templatePath := filepath.Join(templatesDir, templateName)
 
@@ -82,7 +82,7 @@ func applyTemplate(cmd *cobra.Command, templateName, templatesDir, targetDir str
 		}
 	}
 
-	_, _ = fmt.Fprintf(w, "Applying template '%s'...\n", templateName)
+	_, _ = fmt.Fprintf(w, "Pulling template '%s'...\n", templateName)
 
 	// Expand glob patterns to get actual files in template
 	files, err := glob.ExpandPatterns(templatePath, cfg.Includes)
