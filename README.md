@@ -8,7 +8,7 @@
 A CLI tool to manage AI coding assistant configuration templates.
 
 <p align="center">
-  <img src="assets/demo.gif" alt="dotgh demo" width="600">
+  <img src="assets/demo.svg" alt="dotgh demo" width="600">
 </p>
 
 ## 💡 Why dotgh?
