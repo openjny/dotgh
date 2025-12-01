@@ -49,14 +49,14 @@ dotgh [command] [flags]
 
 ### Command List
 
-| Command   | Arguments    | Options       | Description                                         |
-| --------- | ------------ | ------------- | --------------------------------------------------- |
-| `list`    | None         | None          | Display a list of available templates               |
-| `apply`   | `<template>` | `-f, --force` | Apply a template to the current directory           |
-| `push`    | `<template>` | `-f, --force` | Save the current directory's settings as a template |
-| `delete`  | `<template>` | `-f, --force` | Delete a template                                   |
-| `update`  | None         | None          | Update dotgh itself to the latest version           |
-| `version` | None         | None          | Display version information                         |
+| Command   | Arguments    | Options       | Description                                         | Status      |
+| --------- | ------------ | ------------- | --------------------------------------------------- | ----------- |
+| `list`    | None         | None          | Display a list of available templates               | Implemented |
+| `apply`   | `<template>` | `-f, --force` | Apply a template to the current directory           | Implemented |
+| `push`    | `<template>` | `-f, --force` | Save the current directory's settings as a template | Planned     |
+| `delete`  | `<template>` | `-f, --force` | Delete a template                                   | Planned     |
+| `update`  | None         | None          | Update dotgh itself to the latest version           | Planned     |
+| `version` | None         | None          | Display version information                         | Planned     |
 
 ## Data Structures
 

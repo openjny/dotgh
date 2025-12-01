@@ -25,6 +25,7 @@ For details (SOLID, logging, etc.), see `docs/development.md`
 
 - **TDD**: Write tests before implementation.
 - Use table-driven tests with `t.Run()`.
+- 7:2:1 split: 70% unit, 20% integration, 10% e2e tests.
 
 For testing patterns and examples, see `docs/development.md`
 

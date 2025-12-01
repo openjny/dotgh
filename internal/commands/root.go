@@ -19,4 +19,5 @@ func Execute() error {
 
 func init() {
 	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(applyCmd)
 }
