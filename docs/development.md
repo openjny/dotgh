@@ -2,6 +2,22 @@
 
 ## Testing Strategy
 
+### Test Categories (7:2:1 Ratio)
+
+- **Unit tests (70%)**: Test individual functions in isolation. Run with `make test-short`.
+- **Integration tests (20%)**: Test multiple commands working together. Use `testing.Short()` to skip with `-short` flag.
+- **E2E tests (10%)**: Test the compiled binary from user perspective. Run with `make test-e2e`.
+
+### Running Tests
+
+```bash
+make test              # Run all unit and integration tests
+make test-short        # Run only unit tests (skip integration)
+make test-integration  # Run only integration tests
+make test-e2e          # Build binary and run E2E tests
+make test-cover        # Run tests with coverage report
+```
+
 ### Tools & Frameworks
 
 - Use Go's standard `testing` package with `testify/assert` for assertions.
