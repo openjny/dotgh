@@ -2,9 +2,15 @@ package commands
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
+
+// templatesDir is the path to the templates directory.
+// It can be overridden for testing purposes.
+var templatesDir string
 
 var listCmd = &cobra.Command{
 	Use:   "list",
@@ -13,9 +19,85 @@ var listCmd = &cobra.Command{
 	RunE:  runList,
 }
 
+func init() {
+	// Set the default templates directory
+	templatesDir = getDefaultTemplatesDir()
+}
+
+// getDefaultTemplatesDir returns the default templates directory path.
+// It follows the XDG Base Directory Specification using os.UserConfigDir().
+func getDefaultTemplatesDir() string {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		// Fallback to home directory
+		home, _ := os.UserHomeDir()
+		configDir = filepath.Join(home, ".config")
+	}
+	return filepath.Join(configDir, "dotgh", "templates")
+}
+
+// NewListCmd creates a new list command with a custom templates directory.
+// This is primarily used for testing.
+func NewListCmd(customTemplatesDir string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "Display a list of available templates",
+		Long:  `Display a list of available templates stored in the configuration directory.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return listTemplates(cmd, customTemplatesDir)
+		},
+	}
+	return cmd
+}
+
 func runList(cmd *cobra.Command, args []string) error {
-	// TODO: Implement template listing
-	fmt.Fprintln(cmd.OutOrStdout(), "Available templates:")
-	fmt.Fprintln(cmd.OutOrStdout(), "  (no templates found)")
+	return listTemplates(cmd, templatesDir)
+}
+
+// listTemplates scans the templates directory and displays available templates.
+func listTemplates(cmd *cobra.Command, dir string) error {
+	w := cmd.OutOrStdout()
+	_, _ = fmt.Fprintln(w, "Available templates:")
+
+	templates, err := scanTemplates(dir)
+	if err != nil {
+		// Directory doesn't exist or can't be read - show no templates
+		_, _ = fmt.Fprintln(w, "  (no templates found)")
+		_, _ = fmt.Fprintln(w)
+		_, _ = fmt.Fprintf(w, "Template directory: %s\n", dir)
+		return nil
+	}
+
+	if len(templates) == 0 {
+		_, _ = fmt.Fprintln(w, "  (no templates found)")
+		_, _ = fmt.Fprintln(w)
+		_, _ = fmt.Fprintf(w, "Template directory: %s\n", dir)
+		return nil
+	}
+
+	for _, tmpl := range templates {
+		_, _ = fmt.Fprintf(w, "  %s\n", tmpl)
+	}
+	_, _ = fmt.Fprintln(w)
+	_, _ = fmt.Fprintf(w, "%d template(s) found\n", len(templates))
+
 	return nil
+}
+
+// scanTemplates reads the templates directory and returns a list of template names.
+// Only directories are considered as templates (files are ignored).
+func scanTemplates(dir string) ([]string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	var templates []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			templates = append(templates, entry.Name())
+		}
+	}
+
+	return templates, nil
 }

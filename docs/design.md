@@ -7,8 +7,8 @@ Implemented as a single-binary CLI application in Go.
 ### Tech Stack
 
 - **Language**: Go
-- **CLI Framework**: `spf13/cobra` (recommended) or standard `flag` package
-- **Self-Update**: `minio/selfupdate` or `rhysd/go-github-selfupdate`
+- **CLI Framework**: `spf13/cobra`
+- **Self-Update**: `minio/selfupdate` or `rhysd/go-github-selfupdate` (planned)
 - **Release**: `goreleaser` (integrated with GitHub Actions)
 
 ## Directory Structure
