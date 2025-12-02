@@ -54,6 +54,8 @@ dotgh list                  # List templates
 dotgh pull <template>       # Get a template
 dotgh push <template>       # Save as a template
 dotgh delete <template>     # Delete a template
+dotgh config list           # Show current configuration
+dotgh config edit           # Edit configuration file
 dotgh update                # Update dotgh to latest version
 ```
 
