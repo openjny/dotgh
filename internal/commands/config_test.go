@@ -227,12 +227,12 @@ func TestBuildEditorCommand(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Save and restore env
 			oldEditor := os.Getenv("EDITOR")
-			defer os.Setenv("EDITOR", oldEditor)
+			defer func() { _ = os.Setenv("EDITOR", oldEditor) }()
 
 			if tt.envEditor != "" {
-				os.Setenv("EDITOR", tt.envEditor)
+				_ = os.Setenv("EDITOR", tt.envEditor)
 			} else {
-				os.Unsetenv("EDITOR")
+				_ = os.Unsetenv("EDITOR")
 			}
 
 			// We can't easily test the full command execution since it opens an editor,

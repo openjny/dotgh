@@ -93,7 +93,7 @@ func runConfigListWithDir(cmd *cobra.Command, configDir string) error {
 	w := cmd.OutOrStdout()
 
 	// Print config file path as comment
-	fmt.Fprintf(w, "# Config file: %s\n", configPath)
+	_, _ = fmt.Fprintf(w, "# Config file: %s\n", configPath)
 
 	// Load config (defaults if file doesn't exist)
 	cfg, err := config.LoadFromDir(configDir)
@@ -107,7 +107,7 @@ func runConfigListWithDir(cmd *cobra.Command, configDir string) error {
 		return fmt.Errorf("marshal config: %w", err)
 	}
 
-	fmt.Fprint(w, string(data))
+	_, _ = fmt.Fprint(w, string(data))
 	return nil
 }
 

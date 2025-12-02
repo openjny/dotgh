@@ -60,7 +60,7 @@ func TestDetect(t *testing.T) {
 
 			// Set test environment variables
 			for k, v := range tt.envVars {
-				os.Setenv(k, v)
+				_ = os.Setenv(k, v)
 			}
 
 			editor := Detect(tt.configEditor)
@@ -191,7 +191,7 @@ func saveAndClearEnvVars(t *testing.T, keys ...string) map[string]string {
 	saved := make(map[string]string)
 	for _, key := range keys {
 		saved[key] = os.Getenv(key)
-		os.Unsetenv(key)
+		_ = os.Unsetenv(key)
 	}
 	return saved
 }
@@ -200,9 +200,9 @@ func saveAndClearEnvVars(t *testing.T, keys ...string) map[string]string {
 func restoreEnvVars(saved map[string]string) {
 	for key, value := range saved {
 		if value == "" {
-			os.Unsetenv(key)
+			_ = os.Unsetenv(key)
 		} else {
-			os.Setenv(key, value)
+			_ = os.Setenv(key, value)
 		}
 	}
 }
