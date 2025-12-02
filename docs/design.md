@@ -50,6 +50,7 @@ dotgh [command] [flags]
 | `pull`         | `<template>` | `-f, --force`     | Pull a template to the current directory            | Implemented |
 | `push`         | `<template>` | `-f, --force`     | Save the current directory's settings as a template | Implemented |
 | `delete`       | `<template>` | `-f, --force`     | Delete a template                                   | Implemented |
+| `edit`         | `<template>` | None              | Open template in the user's preferred editor        | Implemented |
 | `update`       | None         | `-c, --check`     | Update dotgh itself to the latest version           | Implemented |
 | `version`      | None         | None              | Display version information                         | Implemented |
 | `config`       | None         | None              | Manage dotgh configuration (parent command)         | Implemented |
@@ -89,7 +90,7 @@ If the config file doesn't exist, default targets are used.
 
 ### Editor Detection
 
-The editor for `config edit` is determined in the following order:
+The editor for `edit` and `config edit` commands is determined in the following order:
 
 1. `editor` field in `config.yaml` (highest priority)
 2. `VISUAL` environment variable

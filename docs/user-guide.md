@@ -119,6 +119,16 @@ dotgh delete my-template
 dotgh delete my-template -f
 ```
 
+### `dotgh edit <template>`
+
+Open a template in your preferred editor.
+
+```bash
+dotgh edit my-template
+```
+
+This opens the template directory in the configured editor, allowing you to modify template files directly.
+
 ### `dotgh version`
 
 Display version information.
@@ -202,7 +212,7 @@ includes:
 
 ### Editor Configuration
 
-The `editor` field is optional and specifies the editor to use for `dotgh config edit`.
+The `editor` field is optional and specifies the editor to use for `dotgh edit` and `dotgh config edit` commands.
 
 If not set, dotgh uses the following priority order:
 

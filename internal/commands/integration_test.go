@@ -388,3 +388,80 @@ func verifyFilesExist(t *testing.T, dir string, files []string) {
 		}
 	}
 }
+
+// TestEditTemplateNotFoundIntegration verifies that edit command returns an error
+// for non-existent templates.
+func TestEditTemplateNotFoundIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	templatesDir := t.TempDir()
+	configDir := t.TempDir()
+
+	// Try to edit a template that doesn't exist
+	_, err := executeEditCmd(t, templatesDir, configDir, "non-existent")
+	if err == nil {
+		t.Error("expected error for non-existent template")
+	}
+
+	expectedMsg := `template "non-existent" not found`
+	if !strings.Contains(err.Error(), expectedMsg) {
+		t.Errorf("expected error containing %q, got %q", expectedMsg, err.Error())
+	}
+}
+
+// TestPushThenEditIntegration verifies that a pushed template can be validated for editing.
+// Note: We can't actually launch an editor in tests, so we verify the template path validation.
+func TestPushThenEditIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	// Setup source directory with files
+	sourceDir := setupTestSourceDir(t, map[string]string{
+		"AGENTS.md":                       "# Editable Agents",
+		".github/copilot-instructions.md": "# Instructions",
+	})
+
+	templatesDir := t.TempDir()
+	templateName := "editable-template"
+
+	// Step 1: Push the template
+	_, err := executePushCmd(t, templatesDir, sourceDir, templateName, false)
+	if err != nil {
+		t.Fatalf("push failed: %v", err)
+	}
+
+	// Step 2: Verify template path is valid for edit command
+	templatePath, err := getTemplatePath(templatesDir, templateName)
+	if err != nil {
+		t.Fatalf("getTemplatePath should succeed after push: %v", err)
+	}
+
+	expectedPath := filepath.Join(templatesDir, templateName)
+	if templatePath != expectedPath {
+		t.Errorf("expected template path %q, got %q", expectedPath, templatePath)
+	}
+
+	// Verify template directory contains expected files
+	verifyFilesExist(t, templatePath, []string{
+		"AGENTS.md",
+		".github/copilot-instructions.md",
+	})
+}
+
+// executeEditCmd executes the edit command and returns output.
+// Note: This only validates the template exists; it doesn't actually launch an editor.
+func executeEditCmd(t *testing.T, templatesDir, configDir, templateName string) (string, error) {
+	t.Helper()
+
+	// We can't execute the full command as it would launch an editor,
+	// so we just validate the template path
+	_, err := getTemplatePath(templatesDir, templateName)
+	if err != nil {
+		return "", err
+	}
+
+	return "template validated", nil
+}

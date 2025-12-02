@@ -39,7 +39,28 @@ func Detect(configEditor string) string {
 
 // PrepareCommand returns the command arguments to launch the editor with the target.
 // It automatically adds --wait flag for GUI editors if not already present.
+// For directories, use PrepareCommandForDir instead as --wait doesn't work with directories.
 func PrepareCommand(editor, target string) []string {
+	return prepareCommandInternal(editor, target, waitFlagAdd)
+}
+
+// PrepareCommandForDir returns the command arguments to launch the editor with a directory.
+// Unlike PrepareCommand, it removes any existing --wait flag since GUI editors don't support
+// waiting for directories to be closed.
+func PrepareCommandForDir(editor, target string) []string {
+	return prepareCommandInternal(editor, target, waitFlagRemove)
+}
+
+// waitFlagMode determines how to handle the --wait flag
+type waitFlagMode int
+
+const (
+	waitFlagAdd    waitFlagMode = iota // Add --wait if needed
+	waitFlagRemove                     // Remove --wait if present
+)
+
+// prepareCommandInternal is the internal implementation for preparing editor commands.
+func prepareCommandInternal(editor, target string, mode waitFlagMode) []string {
 	parts := strings.Fields(editor)
 	if len(parts) == 0 {
 		return []string{platformDefault(), target}
@@ -48,9 +69,16 @@ func PrepareCommand(editor, target string) []string {
 	editorName := parts[0]
 	args := parts[1:]
 
-	// Add --wait flag for GUI editors if not already present
-	if needsWaitFlag(editorName) && !hasWaitFlag(args) {
-		args = append(args, "--wait")
+	// Handle --wait flag based on mode
+	if needsWaitFlag(editorName) {
+		switch mode {
+		case waitFlagAdd:
+			if !hasWaitFlag(args) {
+				args = append(args, "--wait")
+			}
+		case waitFlagRemove:
+			args = removeWaitFlag(args)
+		}
 	}
 
 	result := make([]string, 0, len(args)+2)
@@ -87,4 +115,15 @@ func hasWaitFlag(args []string) bool {
 		}
 	}
 	return false
+}
+
+// removeWaitFlag removes --wait and -w flags from the arguments.
+func removeWaitFlag(args []string) []string {
+	result := make([]string, 0, len(args))
+	for _, arg := range args {
+		if arg != "--wait" && arg != "-w" {
+			result = append(result, arg)
+		}
+	}
+	return result
 }
