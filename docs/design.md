@@ -84,9 +84,19 @@ includes:
   - ".github/prompts/*.prompt.md"
   - ".vscode/mcp.json"
   - "custom/*.md"  # Add custom patterns
+excludes:  # Optional: exclude specific files from template management
+  - ".github/prompts/local.prompt.md"
+  - ".github/prompts/secret-*.prompt.md"
 ```
 
 If the config file doesn't exist, default targets are used.
+
+### Exclude Pattern Behavior
+
+- Files matching `excludes` patterns are filtered out after `includes` expansion
+- `excludes` takes priority: if a file matches both `includes` and `excludes`, it is excluded
+- Default: empty list (no exclusions)
+- Supports the same glob pattern syntax as `includes`
 
 ### Editor Detection
 

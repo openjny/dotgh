@@ -208,6 +208,35 @@ includes:
   - ".github/instructions/*.instructions.md"
   - ".github/prompts/*.prompt.md"
   - ".vscode/mcp.json"
+excludes:  # Optional: exclude specific files
+  - ".github/prompts/local.prompt.md"
+  - ".github/prompts/secret-*.prompt.md"
+```
+
+### Excluding Files
+
+The `excludes` field allows you to exclude specific files from template management, even if they match an `includes` pattern.
+
+**Use cases:**
+
+- Exclude project-specific or local configuration files
+- Exclude sensitive files that shouldn't be shared across projects
+- Fine-tune which files are included when using broad patterns
+
+**Behavior:**
+
+- Files matching any `excludes` pattern are filtered out after `includes` expansion
+- `excludes` takes priority: if a file matches both, it is excluded
+- Default: empty list (no exclusions)
+
+**Example:**
+
+```yaml
+includes:
+  - ".github/prompts/*.prompt.md"  # Include all prompt files
+excludes:
+  - ".github/prompts/local.prompt.md"      # Exclude specific file
+  - ".github/prompts/secret-*.prompt.md"   # Exclude files matching pattern
 ```
 
 ### Editor Configuration
