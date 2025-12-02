@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/openjny/dotgh/internal/config"
 )
 
 // setupTestTemplateWithFiles creates a template with the specified files/directories.
@@ -21,9 +23,16 @@ func setupTestTemplateWithFiles(t *testing.T, templateName string, files map[str
 }
 
 // executePullCmd runs the pull command and returns the output.
-func executePullCmd(t *testing.T, templatesDir, targetDir, templateName string, force bool) (string, error) {
+// If excludes is nil, the default config is used.
+func executePullCmd(t *testing.T, templatesDir, targetDir, templateName string, force bool, excludes []string) (string, error) {
 	t.Helper()
-	cmd := NewPullCmdWithConfig(templatesDir, targetDir, testConfig())
+	var cfg *config.Config
+	if excludes == nil {
+		cfg = testConfig()
+	} else {
+		cfg = testConfigWithExcludes(excludes)
+	}
+	cmd := NewPullCmdWithConfig(templatesDir, targetDir, cfg)
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
@@ -150,7 +159,7 @@ func TestPullTemplate(t *testing.T) {
 			}
 
 			// Execute
-			output, err := executePullCmd(t, templatesDir, targetDir, tt.templateName, tt.force)
+			output, err := executePullCmd(t, templatesDir, targetDir, tt.templateName, tt.force, nil)
 
 			// Check error
 			if (err != nil) != tt.wantErr {
@@ -187,7 +196,7 @@ func TestPullTemplateNotFound(t *testing.T) {
 	templatesDir := setupTestTemplatesDir(t, []string{})
 	targetDir := t.TempDir()
 
-	output, err := executePullCmd(t, templatesDir, targetDir, "non-existent", false)
+	output, err := executePullCmd(t, templatesDir, targetDir, "non-existent", false, nil)
 
 	if err == nil {
 		t.Error("expected error for non-existent template")
@@ -227,7 +236,7 @@ func TestPullPreservesExistingContent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err := executePullCmd(t, templatesDir, targetDir, "my-template", false)
+	_, err := executePullCmd(t, templatesDir, targetDir, "my-template", false, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -254,7 +263,7 @@ func TestPullOverwritesWithForce(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err := executePullCmd(t, templatesDir, targetDir, "my-template", true)
+	_, err := executePullCmd(t, templatesDir, targetDir, "my-template", true, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -268,24 +277,6 @@ func TestPullOverwritesWithForce(t *testing.T) {
 	if string(content) != newContent {
 		t.Errorf("content should be overwritten, got: %s", string(content))
 	}
-}
-
-// executePullCmdWithExcludes runs the pull command with excludes config and returns the output.
-func executePullCmdWithExcludes(t *testing.T, templatesDir, targetDir, templateName string, force bool, excludes []string) (string, error) {
-	t.Helper()
-	cmd := NewPullCmdWithConfig(templatesDir, targetDir, testConfigWithExcludes(excludes))
-	var buf bytes.Buffer
-	cmd.SetOut(&buf)
-	cmd.SetErr(&buf)
-
-	args := []string{templateName}
-	if force {
-		args = append(args, "--force")
-	}
-	cmd.SetArgs(args)
-
-	err := cmd.Execute()
-	return buf.String(), err
 }
 
 func TestPullWithExcludes(t *testing.T) {
@@ -365,7 +356,7 @@ func TestPullWithExcludes(t *testing.T) {
 			targetDir := t.TempDir()
 
 			// Execute
-			output, err := executePullCmdWithExcludes(t, templatesDir, targetDir, "exclude-test", false, tt.excludes)
+			output, err := executePullCmd(t, templatesDir, targetDir, "exclude-test", false, tt.excludes)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}

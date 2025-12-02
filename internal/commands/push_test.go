@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/openjny/dotgh/internal/config"
 )
 
 // setupTestSourceDir creates a source directory with the specified files.
@@ -18,9 +20,16 @@ func setupTestSourceDir(t *testing.T, files map[string]string) string {
 }
 
 // executePushCmd runs the push command and returns the output.
-func executePushCmd(t *testing.T, templatesDir, sourceDir, templateName string, force bool) (string, error) {
+// If excludes is nil, the default config is used.
+func executePushCmd(t *testing.T, templatesDir, sourceDir, templateName string, force bool, excludes []string) (string, error) {
 	t.Helper()
-	cmd := NewPushCmdWithConfig(templatesDir, sourceDir, testConfig())
+	var cfg *config.Config
+	if excludes == nil {
+		cfg = testConfig()
+	} else {
+		cfg = testConfigWithExcludes(excludes)
+	}
+	cmd := NewPushCmdWithConfig(templatesDir, sourceDir, cfg)
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
@@ -45,7 +54,7 @@ func TestPushNewTemplate(t *testing.T) {
 
 	templatesDir := t.TempDir()
 
-	output, err := executePushCmd(t, templatesDir, sourceDir, "my-template", false)
+	output, err := executePushCmd(t, templatesDir, sourceDir, "my-template", false, nil)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -93,7 +102,7 @@ func TestPushExistingTemplateWithoutForce(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	output, err := executePushCmd(t, templatesDir, sourceDir, "existing-template", false)
+	output, err := executePushCmd(t, templatesDir, sourceDir, "existing-template", false, nil)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -128,7 +137,7 @@ func TestPushExistingTemplateWithForce(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	output, err := executePushCmd(t, templatesDir, sourceDir, "existing-template", true)
+	output, err := executePushCmd(t, templatesDir, sourceDir, "existing-template", true, nil)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -154,7 +163,7 @@ func TestPushNoTargetsFound(t *testing.T) {
 	sourceDir := t.TempDir()
 	templatesDir := t.TempDir()
 
-	output, err := executePushCmd(t, templatesDir, sourceDir, "my-template", false)
+	output, err := executePushCmd(t, templatesDir, sourceDir, "my-template", false, nil)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -192,7 +201,7 @@ func TestPushWithGitHubDir(t *testing.T) {
 
 	templatesDir := t.TempDir()
 
-	_, err := executePushCmd(t, templatesDir, sourceDir, "github-only", false)
+	_, err := executePushCmd(t, templatesDir, sourceDir, "github-only", false, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -219,7 +228,7 @@ func TestPushWithVSCodeMcpJson(t *testing.T) {
 
 	templatesDir := t.TempDir()
 
-	_, err := executePushCmd(t, templatesDir, sourceDir, "vscode-only", false)
+	_, err := executePushCmd(t, templatesDir, sourceDir, "vscode-only", false, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -240,7 +249,7 @@ func TestPushWithAgentsMdOnly(t *testing.T) {
 
 	templatesDir := t.TempDir()
 
-	output, err := executePushCmd(t, templatesDir, sourceDir, "agents-only", false)
+	output, err := executePushCmd(t, templatesDir, sourceDir, "agents-only", false, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -270,7 +279,7 @@ func TestPushPreservesFileContent(t *testing.T) {
 	sourceDir := setupTestSourceDir(t, expectedContent)
 	templatesDir := t.TempDir()
 
-	_, err := executePushCmd(t, templatesDir, sourceDir, "content-test", false)
+	_, err := executePushCmd(t, templatesDir, sourceDir, "content-test", false, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -287,24 +296,6 @@ func TestPushPreservesFileContent(t *testing.T) {
 			t.Errorf("content mismatch for %s:\nexpected: %s\ngot: %s", file, expected, string(content))
 		}
 	}
-}
-
-// executePushCmdWithExcludes runs the push command with excludes config and returns the output.
-func executePushCmdWithExcludes(t *testing.T, templatesDir, sourceDir, templateName string, force bool, excludes []string) (string, error) {
-	t.Helper()
-	cmd := NewPushCmdWithConfig(templatesDir, sourceDir, testConfigWithExcludes(excludes))
-	var buf bytes.Buffer
-	cmd.SetOut(&buf)
-	cmd.SetErr(&buf)
-
-	args := []string{templateName}
-	if force {
-		args = append(args, "--force")
-	}
-	cmd.SetArgs(args)
-
-	err := cmd.Execute()
-	return buf.String(), err
 }
 
 func TestPushWithExcludes(t *testing.T) {
@@ -384,7 +375,7 @@ func TestPushWithExcludes(t *testing.T) {
 			templatesDir := t.TempDir()
 
 			// Execute
-			output, err := executePushCmdWithExcludes(t, templatesDir, sourceDir, "exclude-test", false, tt.excludes)
+			output, err := executePushCmd(t, templatesDir, sourceDir, "exclude-test", false, tt.excludes)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
