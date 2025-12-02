@@ -27,6 +27,9 @@ dotgh/
 ├── cmd/dotgh/            # Entry point
 ├── internal/
 │   ├── commands/         # CLI subcommands
+│   ├── config/           # Configuration management
+│   ├── editor/           # Editor detection and launching
+│   ├── glob/             # Glob pattern matching
 │   ├── updater/          # Self-update logic
 │   └── version/          # Version info (ldflags)
 ├── docs/                 # Documentation

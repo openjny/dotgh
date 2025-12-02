@@ -8,7 +8,7 @@ import (
 )
 
 // guiEditors is a list of editors that need the --wait flag
-var guiEditors = []string{"code", "code-insiders", "subl", "sublime_text"}
+var guiEditors = []string{"code", "code-insiders", "subl", "sublime_text", "atom"}
 
 // Detect returns the editor to use based on configuration and environment.
 // Priority order:

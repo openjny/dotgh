@@ -13,7 +13,6 @@ func TestDetect(t *testing.T) {
 		configEditor   string
 		envVars        map[string]string
 		expectedEditor string
-		expectError    bool
 	}{
 		{
 			name:           "config editor takes priority",
@@ -156,6 +155,7 @@ func TestNeedsWaitFlag(t *testing.T) {
 		{"code-insiders needs wait", "code-insiders", true},
 		{"subl needs wait", "subl", true},
 		{"sublime_text needs wait", "sublime_text", true},
+		{"atom needs wait", "atom", true},
 		{"vim does not need wait", "vim", false},
 		{"nano does not need wait", "nano", false},
 		{"emacs does not need wait", "emacs", false},
