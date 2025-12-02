@@ -31,6 +31,8 @@ By default, `dotgh` manages these files as template components:
 
 This is customizable via `~/.config/dotgh/config.yaml`. See [User Guide](docs/user-guide.md#configuration) for details.
 
+> 💡 **Using other AI tools?** Check out configuration examples for [Claude Code, Cursor, Windsurf, Gemini CLI, and more](docs/user-guide.md#examples).
+
 ## 📦 Install
 
 **Linux / macOS:**
