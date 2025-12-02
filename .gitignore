@@ -17,4 +17,5 @@ dist/
 
 .github/prompts/**
 .github/instructions/**
+.github/agents/**
 .github/copilot-instructions.md

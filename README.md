@@ -15,13 +15,15 @@ A CLI tool to manage AI coding assistant configuration templates.
 
 If you're using AI coding assistants like GitHub Copilot or Cursor, you've probably noticed yourself creating similar config files over and over again — `copilot-instructions.md`, `.github/prompts/myprompts.md`, `AGENTS.md`, and so on...
 
-`dotgh` is a cross-platform tool that lets you save and apply these config files as templates. When starting a new project, just run `dotgh pull my-awesome-template` and you're good to go 👌.
+`dotgh` is a cross-platform tool that lets you save and apply these config files as templates. When starting a new project, just run `dotgh pull my-template` and you're good to go 👌.
 
 ## 📁 What it manages
 
 By default, `dotgh` manages these files:
 
 - `AGENTS.md` - AI agent instructions
+- `.github/agents/*.agent.md` - Custom agent profiles
+- `.github/copilot-chat-modes/*.chatmode.md` - Custom chat modes
 - `.github/copilot-instructions.md` - GitHub Copilot instructions
 - `.github/instructions/*.instructions.md` - Custom instruction files
 - `.github/prompts/*.prompt.md` - Prompt templates

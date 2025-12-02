@@ -55,6 +55,8 @@ dotgh [command] [flags]
 Default files/directories managed as template components (glob patterns):
 
 - `AGENTS.md`
+- `.github/agents/*.agent.md`
+- `.github/copilot-chat-modes/*.chatmode.md`
 - `.github/copilot-instructions.md`
 - `.github/instructions/*.instructions.md`
 - `.github/prompts/*.prompt.md`
@@ -67,6 +69,8 @@ Targets can be customized via `~/.config/dotgh/config.yaml`:
 ```yaml
 includes:
   - "AGENTS.md"
+  - ".github/agents/*.agent.md"
+  - ".github/copilot-chat-modes/*.chatmode.md"
   - ".github/copilot-instructions.md"
   - ".github/instructions/*.instructions.md"
   - ".github/prompts/*.prompt.md"
