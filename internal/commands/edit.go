@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/openjny/dotgh/internal/config"
+	"github.com/openjny/dotgh/internal/editor"
 	"github.com/spf13/cobra"
 )
 
@@ -44,8 +45,8 @@ func runEditWithDirs(cmd *cobra.Command, args []string, templatesDir, configDir 
 		return fmt.Errorf("load config: %w", err)
 	}
 
-	// Build and execute editor command
-	editorArgs := buildEditorCommand(cfg.Editor, templatePath)
+	// Build and execute editor command (use ForDir since we're opening a directory)
+	editorArgs := buildEditorCommandForDir(cfg.Editor, templatePath)
 	execCmd := exec.Command(editorArgs[0], editorArgs[1:]...)
 	execCmd.Stdin = os.Stdin
 	execCmd.Stdout = os.Stdout
@@ -100,4 +101,12 @@ The editor is determined in the following order:
 // Alias for NewEditCmd for consistency with other commands.
 func NewEditCmdWithConfig(customTemplatesDir, configDir string) *cobra.Command {
 	return NewEditCmd(customTemplatesDir, configDir)
+}
+
+// buildEditorCommandForDir returns the command arguments to launch the editor for a directory.
+// Unlike buildEditorCommand, it does not add --wait flag since GUI editors don't support
+// waiting for directories to be closed.
+func buildEditorCommandForDir(configEditor, target string) []string {
+	editorStr := editor.Detect(configEditor)
+	return editor.PrepareCommandForDir(editorStr, target)
 }

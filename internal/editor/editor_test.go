@@ -145,6 +145,68 @@ func TestPrepareCommand(t *testing.T) {
 	}
 }
 
+func TestPrepareCommandForDir(t *testing.T) {
+	tests := []struct {
+		name         string
+		editor       string
+		target       string
+		expectedArgs []string
+	}{
+		{
+			name:         "simple editor for directory",
+			editor:       "vim",
+			target:       "/path/to/dir",
+			expectedArgs: []string{"vim", "/path/to/dir"},
+		},
+		{
+			name:         "code for directory does NOT get wait flag",
+			editor:       "code",
+			target:       "/path/to/dir",
+			expectedArgs: []string{"code", "/path/to/dir"},
+		},
+		{
+			name:         "code-insiders for directory does NOT get wait flag",
+			editor:       "code-insiders",
+			target:       "/path/to/dir",
+			expectedArgs: []string{"code-insiders", "/path/to/dir"},
+		},
+		{
+			name:         "subl for directory does NOT get wait flag",
+			editor:       "subl",
+			target:       "/path/to/dir",
+			expectedArgs: []string{"subl", "/path/to/dir"},
+		},
+		{
+			name:         "editor with explicit wait flag is REMOVED for directory",
+			editor:       "code --wait",
+			target:       "/path/to/dir",
+			expectedArgs: []string{"code", "/path/to/dir"},
+		},
+		{
+			name:         "editor with -w flag is REMOVED for directory",
+			editor:       "code -w",
+			target:       "/path/to/dir",
+			expectedArgs: []string{"code", "/path/to/dir"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			args := PrepareCommandForDir(tt.editor, tt.target)
+			if len(args) != len(tt.expectedArgs) {
+				t.Errorf("PrepareCommandForDir() returned %d args, want %d: got %v, want %v",
+					len(args), len(tt.expectedArgs), args, tt.expectedArgs)
+				return
+			}
+			for i, arg := range args {
+				if arg != tt.expectedArgs[i] {
+					t.Errorf("PrepareCommandForDir()[%d] = %q, want %q", i, arg, tt.expectedArgs[i])
+				}
+			}
+		})
+	}
+}
+
 func TestNeedsWaitFlag(t *testing.T) {
 	tests := []struct {
 		name     string
