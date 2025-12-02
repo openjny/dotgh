@@ -237,4 +237,3 @@ func TestCreateDefaultConfigFileInNestedDir(t *testing.T) {
 		t.Fatal("config file was not created")
 	}
 }
-
