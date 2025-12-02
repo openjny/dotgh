@@ -13,23 +13,25 @@ A CLI tool to manage AI coding assistant configuration templates.
 
 ## 💡 Why dotgh?
 
-If you're using AI coding assistants like GitHub Copilot or Cursor, you've probably noticed yourself creating similar config files over and over again — `copilot-instructions.md`, `.github/prompts/myprompts.md`, `AGENTS.md`, and so on...
+If you're using AI coding assistants like GitHub Copilot or Cursor, you've probably noticed yourself creating similar config files over and over again — `.github/copilot-instructions.md`, `.github/prompts/my.prompt.md`, `AGENTS.md`, and so on...
 
 `dotgh` is a cross-platform tool that lets you save and apply these config files as templates. When starting a new project, just run `dotgh pull my-template` and you're good to go 👌.
 
 ## 📁 What it manages
 
-By default, `dotgh` manages these files:
+By default, `dotgh` manages these files as template components:
 
-- `AGENTS.md` - AI agent instructions
-- `.github/agents/*.agent.md` - Custom agent profiles
-- `.github/copilot-chat-modes/*.chatmode.md` - Custom chat modes
-- `.github/copilot-instructions.md` - GitHub Copilot instructions
-- `.github/instructions/*.instructions.md` - Custom instruction files
-- `.github/prompts/*.prompt.md` - Prompt templates
-- `.vscode/mcp.json` - VS Code MCP server configuration
+- `AGENTS.md`
+- `.github/agents/*.agent.md`
+- `.github/copilot-chat-modes/*.chatmode.md`
+- `.github/copilot-instructions.md`
+- `.github/instructions/*.instructions.md`
+- `.github/prompts/*.prompt.md`
+- `.vscode/mcp.json`
 
-> Customizable via `~/.config/dotgh/config.yaml`. See [User Guide](docs/user-guide.md) for details.
+This is customizable via `~/.config/dotgh/config.yaml`. See [User Guide](docs/user-guide.md#configuration) for details.
+
+> 💡 **Using other AI tools?** Check out configuration examples for [Claude Code, Cursor, Windsurf, Gemini CLI, and more](docs/user-guide.md#examples).
 
 ## 📦 Install
 
@@ -45,7 +47,7 @@ curl -fsSL https://raw.githubusercontent.com/openjny/dotgh/main/install.sh | bas
 irm https://raw.githubusercontent.com/openjny/dotgh/main/install.ps1 | iex
 ```
 
-> See [User Guide](docs/user-guide.md) for more installation options.
+See [User Guide](docs/user-guide.md#installation) for more installation options.
 
 ## 🚀 Usage
 
@@ -59,7 +61,13 @@ dotgh config edit           # Edit configuration file
 dotgh update                # Update dotgh to latest version
 ```
 
+See [User Guide](docs/user-guide.md#commands) for detailed command usage.
+
 ## 📖 Documentation
 
 - [User Guide](docs/user-guide.md) - Installation, commands, configuration
 - [Development](docs/development.md) - Contributing, testing, releases
+
+## ⚖️ License
+
+This project is licensed under the Apache 2.0 License. See the [LICENSE](LICENSE) file for details.

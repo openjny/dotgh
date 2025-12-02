@@ -28,12 +28,14 @@ func TestLoadFromDir(t *testing.T) {
 		name         string
 		configYAML   string // empty means no config file
 		wantIncludes []string
+		wantExcludes []string
 		wantErr      bool
 	}{
 		{
 			name:         "no config file returns defaults",
 			configYAML:   "",
 			wantIncludes: DefaultIncludes,
+			wantExcludes: nil,
 			wantErr:      false,
 		},
 		{
@@ -43,19 +45,43 @@ func TestLoadFromDir(t *testing.T) {
   - "another/*.txt"
 `,
 			wantIncludes: []string{"custom/file.md", "another/*.txt"},
+			wantExcludes: nil,
 			wantErr:      false,
 		},
 		{
 			name:         "empty includes",
 			configYAML:   "includes: []\n",
 			wantIncludes: []string{},
+			wantExcludes: nil,
 			wantErr:      false,
 		},
 		{
 			name:         "invalid YAML",
 			configYAML:   "includes: [invalid yaml",
 			wantIncludes: nil,
+			wantExcludes: nil,
 			wantErr:      true,
+		},
+		{
+			name: "with excludes",
+			configYAML: `includes:
+  - "AGENTS.md"
+excludes:
+  - ".github/prompts/local.prompt.md"
+  - ".github/prompts/secret-*.prompt.md"
+`,
+			wantIncludes: []string{"AGENTS.md"},
+			wantExcludes: []string{".github/prompts/local.prompt.md", ".github/prompts/secret-*.prompt.md"},
+			wantErr:      false,
+		},
+		{
+			name: "empty excludes",
+			configYAML: `includes: []
+excludes: []
+`,
+			wantIncludes: []string{},
+			wantExcludes: []string{},
+			wantErr:      false,
 		},
 	}
 
@@ -84,6 +110,10 @@ func TestLoadFromDir(t *testing.T) {
 
 			if !reflect.DeepEqual(cfg.Includes, tt.wantIncludes) {
 				t.Errorf("Includes = %v, want %v", cfg.Includes, tt.wantIncludes)
+			}
+
+			if !reflect.DeepEqual(cfg.Excludes, tt.wantExcludes) {
+				t.Errorf("Excludes = %v, want %v", cfg.Excludes, tt.wantExcludes)
 			}
 		})
 	}

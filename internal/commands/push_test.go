@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/openjny/dotgh/internal/config"
 )
 
 // setupTestSourceDir creates a source directory with the specified files.
@@ -18,9 +20,16 @@ func setupTestSourceDir(t *testing.T, files map[string]string) string {
 }
 
 // executePushCmd runs the push command and returns the output.
-func executePushCmd(t *testing.T, templatesDir, sourceDir, templateName string, force bool) (string, error) {
+// If excludes is nil, the default config is used.
+func executePushCmd(t *testing.T, templatesDir, sourceDir, templateName string, force bool, excludes []string) (string, error) {
 	t.Helper()
-	cmd := NewPushCmdWithConfig(templatesDir, sourceDir, testConfig())
+	var cfg *config.Config
+	if excludes == nil {
+		cfg = testConfig()
+	} else {
+		cfg = testConfigWithExcludes(excludes)
+	}
+	cmd := NewPushCmdWithConfig(templatesDir, sourceDir, cfg)
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
@@ -45,7 +54,7 @@ func TestPushNewTemplate(t *testing.T) {
 
 	templatesDir := t.TempDir()
 
-	output, err := executePushCmd(t, templatesDir, sourceDir, "my-template", false)
+	output, err := executePushCmd(t, templatesDir, sourceDir, "my-template", false, nil)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -93,7 +102,7 @@ func TestPushExistingTemplateWithoutForce(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	output, err := executePushCmd(t, templatesDir, sourceDir, "existing-template", false)
+	output, err := executePushCmd(t, templatesDir, sourceDir, "existing-template", false, nil)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -128,7 +137,7 @@ func TestPushExistingTemplateWithForce(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	output, err := executePushCmd(t, templatesDir, sourceDir, "existing-template", true)
+	output, err := executePushCmd(t, templatesDir, sourceDir, "existing-template", true, nil)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -154,7 +163,7 @@ func TestPushNoTargetsFound(t *testing.T) {
 	sourceDir := t.TempDir()
 	templatesDir := t.TempDir()
 
-	output, err := executePushCmd(t, templatesDir, sourceDir, "my-template", false)
+	output, err := executePushCmd(t, templatesDir, sourceDir, "my-template", false, nil)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -192,7 +201,7 @@ func TestPushWithGitHubDir(t *testing.T) {
 
 	templatesDir := t.TempDir()
 
-	_, err := executePushCmd(t, templatesDir, sourceDir, "github-only", false)
+	_, err := executePushCmd(t, templatesDir, sourceDir, "github-only", false, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -219,7 +228,7 @@ func TestPushWithVSCodeMcpJson(t *testing.T) {
 
 	templatesDir := t.TempDir()
 
-	_, err := executePushCmd(t, templatesDir, sourceDir, "vscode-only", false)
+	_, err := executePushCmd(t, templatesDir, sourceDir, "vscode-only", false, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -240,7 +249,7 @@ func TestPushWithAgentsMdOnly(t *testing.T) {
 
 	templatesDir := t.TempDir()
 
-	output, err := executePushCmd(t, templatesDir, sourceDir, "agents-only", false)
+	output, err := executePushCmd(t, templatesDir, sourceDir, "agents-only", false, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -270,7 +279,7 @@ func TestPushPreservesFileContent(t *testing.T) {
 	sourceDir := setupTestSourceDir(t, expectedContent)
 	templatesDir := t.TempDir()
 
-	_, err := executePushCmd(t, templatesDir, sourceDir, "content-test", false)
+	_, err := executePushCmd(t, templatesDir, sourceDir, "content-test", false, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -286,5 +295,115 @@ func TestPushPreservesFileContent(t *testing.T) {
 		if string(content) != expected {
 			t.Errorf("content mismatch for %s:\nexpected: %s\ngot: %s", file, expected, string(content))
 		}
+	}
+}
+
+func TestPushWithExcludes(t *testing.T) {
+	tests := []struct {
+		name         string
+		sourceFiles  map[string]string
+		excludes     []string
+		wantFiles    []string // files that should exist in template after push
+		wantNotFiles []string // files that should NOT exist in template after push
+		wantContains []string
+	}{
+		{
+			name: "exclude specific file",
+			sourceFiles: map[string]string{
+				"AGENTS.md":                       "# Agents",
+				".github/prompts/test.prompt.md":  "# Test",
+				".github/prompts/local.prompt.md": "# Local",
+			},
+			excludes:     []string{".github/prompts/local.prompt.md"},
+			wantFiles:    []string{"AGENTS.md", ".github/prompts/test.prompt.md"},
+			wantNotFiles: []string{".github/prompts/local.prompt.md"},
+			wantContains: []string{"Pushing to template"},
+		},
+		{
+			name: "exclude with wildcard pattern",
+			sourceFiles: map[string]string{
+				"AGENTS.md":                              "# Agents",
+				".github/prompts/test.prompt.md":         "# Test",
+				".github/prompts/secret-key.prompt.md":   "# Secret Key",
+				".github/prompts/secret-token.prompt.md": "# Secret Token",
+			},
+			excludes:     []string{".github/prompts/secret-*.prompt.md"},
+			wantFiles:    []string{"AGENTS.md", ".github/prompts/test.prompt.md"},
+			wantNotFiles: []string{".github/prompts/secret-key.prompt.md", ".github/prompts/secret-token.prompt.md"},
+			wantContains: []string{"Pushing to template"},
+		},
+		{
+			name: "exclude multiple patterns",
+			sourceFiles: map[string]string{
+				"AGENTS.md":                       "# Agents",
+				".github/prompts/test.prompt.md":  "# Test",
+				".github/prompts/local.prompt.md": "# Local",
+				".vscode/mcp.json":                "{}",
+			},
+			excludes:     []string{".github/prompts/local.prompt.md", ".vscode/mcp.json"},
+			wantFiles:    []string{"AGENTS.md", ".github/prompts/test.prompt.md"},
+			wantNotFiles: []string{".github/prompts/local.prompt.md", ".vscode/mcp.json"},
+			wantContains: []string{"Pushing to template"},
+		},
+		{
+			name: "empty excludes copies all files",
+			sourceFiles: map[string]string{
+				"AGENTS.md":                      "# Agents",
+				".github/prompts/test.prompt.md": "# Test",
+			},
+			excludes:     []string{},
+			wantFiles:    []string{"AGENTS.md", ".github/prompts/test.prompt.md"},
+			wantNotFiles: []string{},
+			wantContains: []string{"Pushing to template"},
+		},
+		{
+			name: "exclude all matching files",
+			sourceFiles: map[string]string{
+				"AGENTS.md": "# Agents",
+			},
+			excludes:     []string{"AGENTS.md"},
+			wantFiles:    []string{},
+			wantNotFiles: []string{"AGENTS.md"},
+			wantContains: []string{"No target files found"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup source directory
+			sourceDir := setupTestSourceDir(t, tt.sourceFiles)
+			templatesDir := t.TempDir()
+
+			// Execute
+			output, err := executePushCmd(t, templatesDir, sourceDir, "exclude-test", false, tt.excludes)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			// Check output contains expected strings
+			for _, want := range tt.wantContains {
+				if !strings.Contains(output, want) {
+					t.Errorf("output should contain %q, got:\n%s", want, output)
+				}
+			}
+
+			templateDir := filepath.Join(templatesDir, "exclude-test")
+
+			// Check expected files exist
+			for _, file := range tt.wantFiles {
+				fullPath := filepath.Join(templateDir, file)
+				if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+					t.Errorf("expected file %s to exist in template", file)
+				}
+			}
+
+			// Check excluded files do NOT exist
+			for _, file := range tt.wantNotFiles {
+				fullPath := filepath.Join(templateDir, file)
+				if _, err := os.Stat(fullPath); !os.IsNotExist(err) {
+					t.Errorf("file %s should NOT exist in template (should be excluded)", file)
+				}
+			}
+		})
 	}
 }

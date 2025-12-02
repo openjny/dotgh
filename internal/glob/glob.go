@@ -45,3 +45,33 @@ func ExpandPatterns(baseDir string, patterns []string) ([]string, error) {
 func MatchPattern(pattern, path string) (bool, error) {
 	return filepath.Match(pattern, path)
 }
+
+// FilterExcludes filters out files that match any of the exclude patterns.
+// Files is expected to be a list of relative paths with forward slashes.
+// The order of non-excluded files is preserved.
+// Returns nil and an error if any exclude pattern is invalid.
+func FilterExcludes(files []string, excludePatterns []string) ([]string, error) {
+	if len(excludePatterns) == 0 {
+		return files, nil
+	}
+
+	var result []string
+	for _, file := range files {
+		excluded := false
+		for _, pattern := range excludePatterns {
+			matched, err := filepath.Match(pattern, file)
+			if err != nil {
+				return nil, fmt.Errorf("invalid exclude pattern %q: %w", pattern, err)
+			}
+			if matched {
+				excluded = true
+				break
+			}
+		}
+		if !excluded {
+			result = append(result, file)
+		}
+	}
+
+	return result, nil
+}

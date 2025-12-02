@@ -185,21 +185,19 @@ If the config file doesn't exist, it will be created with default values first.
 
 ## Configuration
 
-### Config File Location
-
-dotgh uses a YAML configuration file located at:
+`dotgh` uses a YAML configuration file located at:
 
 | Platform | Location |
 |----------|----------|
 | Linux/macOS | `~/.config/dotgh/config.yaml` |
 | Windows | `%LOCALAPPDATA%\dotgh\config.yaml` |
 
-### Customizing Target Patterns
+If the config file does not exist, default settings are used. You can create or edit the config file using the `dotgh config edit` command.
 
-You can customize which files are managed by templates by creating a `config.yaml`:
+The configuration file supports the following fields:
 
 ```yaml
-editor: "code --wait"  # Optional: override the default editor
+editor: "code --wait"  
 includes:
   - "AGENTS.md"
   - ".github/agents/*.agent.md"
@@ -208,9 +206,12 @@ includes:
   - ".github/instructions/*.instructions.md"
   - ".github/prompts/*.prompt.md"
   - ".vscode/mcp.json"
+excludes:
+  - ".github/prompts/local.prompt.md"
+  - ".github/prompts/secret-*.prompt.md"
 ```
 
-### Editor Configuration
+### editor:
 
 The `editor` field is optional and specifies the editor to use for `dotgh edit` and `dotgh config edit` commands.
 
@@ -223,33 +224,120 @@ If not set, dotgh uses the following priority order:
 
 For GUI editors like VS Code or Sublime Text, the `--wait` flag is automatically added to ensure the command waits until the editor is closed.
 
-#### Default Targets
+
+### includes:
+
+The `includes` field is required and specifies the files and directories to manage as template components. It supports glob patterns for flexible matching.
 
 If no config file exists, the following default patterns are used:
 
-- `AGENTS.md` - AI agent instructions
-- `.github/agents/*.agent.md` - Custom agent profiles
-- `.github/copilot-chat-modes/*.chatmode.md` - Custom chat modes
-- `.github/copilot-instructions.md` - GitHub Copilot instructions
-- `.github/instructions/*.instructions.md` - Custom instruction files
-- `.github/prompts/*.prompt.md` - Prompt templates
-- `.vscode/mcp.json` - VS Code MCP server configuration
+- `AGENTS.md`
+- `.github/agents/*.agent.md`
+- `.github/copilot-chat-modes/*.chatmode.md`
+- `.github/copilot-instructions.md`
+- `.github/instructions/*.instructions.md`
+- `.github/prompts/*.prompt.md`
+- `.vscode/mcp.json`
 
-#### Glob Pattern Support
-
-Target patterns support standard glob syntax:
+It supports standard glob syntax:
 
 - `*` matches any sequence of characters (except path separators)
 - `?` matches any single character
 - `[abc]` matches any character in the set
 
-Examples:
+> **Note:** Recursive patterns (`**`) are not supported. Use explicit directory paths like `.github/prompts/*.prompt.md` instead of `**/*.prompt.md`.
+
+#### Examples
+
+**Claude Code:**
 
 ```yaml
 includes:
-  - "*.md"                              # All markdown files in root
-  - ".github/prompts/*.prompt.md"       # All prompt files
-  - "config/*.json"                     # All JSON files in config/
+  - "AGENTS.md"
+  - "CLAUDE.md"
+  - ".claude/settings.json"
+excludes:
+  - "CLAUDE.local.md"
+  - ".claude/settings.local.json"
+```
+
+**Gemini CLI:**
+
+```yaml
+includes:
+  - "AGENTS.md"
+  - "GEMINI.md"
+  - ".gemini/settings.json"
+  - ".gemini/system.md"
+```
+
+**Cursor:**
+
+```yaml
+includes:
+  - "AGENTS.md"
+  - ".cursorrules"
+  - ".cursor/rules/*.mdc"
+```
+
+**Windsurf:**
+
+```yaml
+includes:
+  - "AGENTS.md"
+  - ".windsurfrules"
+  - ".windsurf/rules/*.md"
+```
+
+**Cline:**
+
+```yaml
+includes:
+  - "AGENTS.md"
+  - ".clinerules"
+```
+
+**Kilo Code:**
+
+```yaml
+includes:
+  - "AGENTS.md"
+  - ".kilocode/rules/*.md"
+```
+
+**Roo Code:**
+
+```yaml
+includes:
+  - "AGENTS.md"
+  - ".roorules"
+  - ".roo/rules/*.mdc"
+```
+
+### excludes
+
+The `excludes` field allows you to exclude specific files from template management, even if they match an `includes` pattern.
+
+**Use cases:**
+
+- Exclude project-specific or local configuration files
+- Exclude sensitive files that shouldn't be shared across projects
+- Fine-tune which files are included when using broad patterns
+
+**Behavior:**
+
+- Files matching any `excludes` pattern are filtered out after `includes` expansion
+- `excludes` takes priority: if a file matches both, it is excluded
+- Default: empty list (no exclusions)
+
+**Example:**
+
+```yaml
+includes:
+  - ".github/prompts/*.prompt.md"  # Include all prompt files
+excludes:
+  - ".github/prompts/local.prompt.md"      # Exclude specific file
+  - ".github/prompts/secret-*.prompt.md"   # Exclude files matching pattern
 ```
 
 ---

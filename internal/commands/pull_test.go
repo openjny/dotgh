@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/openjny/dotgh/internal/config"
 )
 
 // setupTestTemplateWithFiles creates a template with the specified files/directories.
@@ -21,9 +23,16 @@ func setupTestTemplateWithFiles(t *testing.T, templateName string, files map[str
 }
 
 // executePullCmd runs the pull command and returns the output.
-func executePullCmd(t *testing.T, templatesDir, targetDir, templateName string, force bool) (string, error) {
+// If excludes is nil, the default config is used.
+func executePullCmd(t *testing.T, templatesDir, targetDir, templateName string, force bool, excludes []string) (string, error) {
 	t.Helper()
-	cmd := NewPullCmdWithConfig(templatesDir, targetDir, testConfig())
+	var cfg *config.Config
+	if excludes == nil {
+		cfg = testConfig()
+	} else {
+		cfg = testConfigWithExcludes(excludes)
+	}
+	cmd := NewPullCmdWithConfig(templatesDir, targetDir, cfg)
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
@@ -150,7 +159,7 @@ func TestPullTemplate(t *testing.T) {
 			}
 
 			// Execute
-			output, err := executePullCmd(t, templatesDir, targetDir, tt.templateName, tt.force)
+			output, err := executePullCmd(t, templatesDir, targetDir, tt.templateName, tt.force, nil)
 
 			// Check error
 			if (err != nil) != tt.wantErr {
@@ -187,7 +196,7 @@ func TestPullTemplateNotFound(t *testing.T) {
 	templatesDir := setupTestTemplatesDir(t, []string{})
 	targetDir := t.TempDir()
 
-	output, err := executePullCmd(t, templatesDir, targetDir, "non-existent", false)
+	output, err := executePullCmd(t, templatesDir, targetDir, "non-existent", false, nil)
 
 	if err == nil {
 		t.Error("expected error for non-existent template")
@@ -227,7 +236,7 @@ func TestPullPreservesExistingContent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err := executePullCmd(t, templatesDir, targetDir, "my-template", false)
+	_, err := executePullCmd(t, templatesDir, targetDir, "my-template", false, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -254,7 +263,7 @@ func TestPullOverwritesWithForce(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err := executePullCmd(t, templatesDir, targetDir, "my-template", true)
+	_, err := executePullCmd(t, templatesDir, targetDir, "my-template", true, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -267,5 +276,113 @@ func TestPullOverwritesWithForce(t *testing.T) {
 
 	if string(content) != newContent {
 		t.Errorf("content should be overwritten, got: %s", string(content))
+	}
+}
+
+func TestPullWithExcludes(t *testing.T) {
+	tests := []struct {
+		name          string
+		templateFiles map[string]string
+		excludes      []string
+		wantFiles     []string // files that should exist after pull
+		wantNotFiles  []string // files that should NOT exist after pull
+		wantContains  []string
+	}{
+		{
+			name: "exclude specific file",
+			templateFiles: map[string]string{
+				"AGENTS.md":                       "# Agents",
+				".github/prompts/test.prompt.md":  "# Test",
+				".github/prompts/local.prompt.md": "# Local",
+			},
+			excludes:     []string{".github/prompts/local.prompt.md"},
+			wantFiles:    []string{"AGENTS.md", ".github/prompts/test.prompt.md"},
+			wantNotFiles: []string{".github/prompts/local.prompt.md"},
+			wantContains: []string{"Pulling template"},
+		},
+		{
+			name: "exclude with wildcard pattern",
+			templateFiles: map[string]string{
+				"AGENTS.md":                              "# Agents",
+				".github/prompts/test.prompt.md":         "# Test",
+				".github/prompts/secret-key.prompt.md":   "# Secret Key",
+				".github/prompts/secret-token.prompt.md": "# Secret Token",
+			},
+			excludes:     []string{".github/prompts/secret-*.prompt.md"},
+			wantFiles:    []string{"AGENTS.md", ".github/prompts/test.prompt.md"},
+			wantNotFiles: []string{".github/prompts/secret-key.prompt.md", ".github/prompts/secret-token.prompt.md"},
+			wantContains: []string{"Pulling template"},
+		},
+		{
+			name: "exclude multiple patterns",
+			templateFiles: map[string]string{
+				"AGENTS.md":                       "# Agents",
+				".github/prompts/test.prompt.md":  "# Test",
+				".github/prompts/local.prompt.md": "# Local",
+				".vscode/mcp.json":                "{}",
+			},
+			excludes:     []string{".github/prompts/local.prompt.md", ".vscode/mcp.json"},
+			wantFiles:    []string{"AGENTS.md", ".github/prompts/test.prompt.md"},
+			wantNotFiles: []string{".github/prompts/local.prompt.md", ".vscode/mcp.json"},
+			wantContains: []string{"Pulling template"},
+		},
+		{
+			name: "empty excludes copies all files",
+			templateFiles: map[string]string{
+				"AGENTS.md":                      "# Agents",
+				".github/prompts/test.prompt.md": "# Test",
+			},
+			excludes:     []string{},
+			wantFiles:    []string{"AGENTS.md", ".github/prompts/test.prompt.md"},
+			wantNotFiles: []string{},
+			wantContains: []string{"Pulling template"},
+		},
+		{
+			name: "exclude all matching files",
+			templateFiles: map[string]string{
+				"AGENTS.md": "# Agents",
+			},
+			excludes:     []string{"AGENTS.md"},
+			wantFiles:    []string{},
+			wantNotFiles: []string{"AGENTS.md"},
+			wantContains: []string{"no matching files found"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup template
+			templatesDir := setupTestTemplateWithFiles(t, "exclude-test", tt.templateFiles)
+			targetDir := t.TempDir()
+
+			// Execute
+			output, err := executePullCmd(t, templatesDir, targetDir, "exclude-test", false, tt.excludes)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			// Check output contains expected strings
+			for _, want := range tt.wantContains {
+				if !strings.Contains(output, want) {
+					t.Errorf("output should contain %q, got:\n%s", want, output)
+				}
+			}
+
+			// Check expected files exist
+			for _, file := range tt.wantFiles {
+				fullPath := filepath.Join(targetDir, file)
+				if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+					t.Errorf("expected file %s to exist", file)
+				}
+			}
+
+			// Check excluded files do NOT exist
+			for _, file := range tt.wantNotFiles {
+				fullPath := filepath.Join(targetDir, file)
+				if _, err := os.Stat(fullPath); !os.IsNotExist(err) {
+					t.Errorf("file %s should NOT exist (should be excluded)", file)
+				}
+			}
+		})
 	}
 }
