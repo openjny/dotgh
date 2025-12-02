@@ -111,11 +111,17 @@ func TestEditCmdWithExistingTemplateValidatesPath(t *testing.T) {
 func TestGetTemplatePath(t *testing.T) {
 	templatesDir := t.TempDir()
 
-	// Create a template
+	// Create a template directory
 	templateName := "test-template"
 	templateDir := filepath.Join(templatesDir, templateName)
 	if err := os.MkdirAll(templateDir, 0755); err != nil {
 		t.Fatalf("failed to create template directory: %v", err)
+	}
+
+	// Create a file (not a directory) with a template-like name
+	filePath := filepath.Join(templatesDir, "not-a-template")
+	if err := os.WriteFile(filePath, []byte("test"), 0644); err != nil {
+		t.Fatalf("failed to create file: %v", err)
 	}
 
 	tests := []struct {
@@ -134,6 +140,13 @@ func TestGetTemplatePath(t *testing.T) {
 		{
 			name:          "non-existing template",
 			templateName:  "non-existent",
+			wantPath:      "",
+			wantError:     true,
+			errorContains: "not found",
+		},
+		{
+			name:          "file instead of directory",
+			templateName:  "not-a-template",
 			wantPath:      "",
 			wantError:     true,
 			errorContains: "not found",
@@ -161,24 +174,6 @@ func TestGetTemplatePath(t *testing.T) {
 				}
 			}
 		})
-	}
-}
-
-func TestGetTemplatePathDoesNotAcceptFiles(t *testing.T) {
-	templatesDir := t.TempDir()
-
-	// Create a file (not a directory) with a template-like name
-	filePath := filepath.Join(templatesDir, "not-a-template")
-	if err := os.WriteFile(filePath, []byte("test"), 0644); err != nil {
-		t.Fatalf("failed to create file: %v", err)
-	}
-
-	_, err := getTemplatePath(templatesDir, "not-a-template")
-	if err == nil {
-		t.Error("expected error for file (not directory), got nil")
-	}
-	if !strings.Contains(err.Error(), "not found") {
-		t.Errorf("expected error containing 'not found', got %q", err.Error())
 	}
 }
 

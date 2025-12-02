@@ -11,19 +11,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var editCmd = &cobra.Command{
-	Use:   "edit <template>",
-	Short: "Open template in the user's preferred editor",
-	Long: `Open the specified template directory in the user's preferred editor.
+// editCmdLong is the long description for the edit command.
+const editCmdLong = `Open the specified template directory in the user's preferred editor.
 
 The editor is determined in the following order:
 1. 'editor' field in config.yaml
 2. VISUAL environment variable
 3. EDITOR environment variable
 4. GIT_EDITOR environment variable
-5. Platform default (vi on Linux/macOS, notepad on Windows)`,
-	Args: cobra.ExactArgs(1),
-	RunE: runEdit,
+5. Platform default (vi on Linux/macOS, notepad on Windows)`
+
+var editCmd = &cobra.Command{
+	Use:   "edit <template>",
+	Short: "Open template in the user's preferred editor",
+	Long:  editCmdLong,
+	Args:  cobra.ExactArgs(1),
+	RunE:  runEdit,
 }
 
 func runEdit(cmd *cobra.Command, args []string) error {
@@ -78,27 +81,18 @@ func getTemplatePath(templatesDir, templateName string) (string, error) {
 // NewEditCmd creates a new edit command with custom directories.
 // This is primarily used for testing.
 func NewEditCmd(customTemplatesDir, configDir string) *cobra.Command {
-	cmd := &cobra.Command{
+	return &cobra.Command{
 		Use:   "edit <template>",
 		Short: "Open template in the user's preferred editor",
-		Long: `Open the specified template directory in the user's preferred editor.
-
-The editor is determined in the following order:
-1. 'editor' field in config.yaml
-2. VISUAL environment variable
-3. EDITOR environment variable
-4. GIT_EDITOR environment variable
-5. Platform default (vi on Linux/macOS, notepad on Windows)`,
-		Args: cobra.ExactArgs(1),
+		Long:  editCmdLong,
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runEditWithDirs(cmd, args, customTemplatesDir, configDir)
 		},
 	}
-	return cmd
 }
 
-// NewEditCmdWithConfig creates a new edit command with custom directories.
-// Alias for NewEditCmd for consistency with other commands.
+// NewEditCmdWithConfig is an alias for NewEditCmd for consistency with other commands.
 func NewEditCmdWithConfig(customTemplatesDir, configDir string) *cobra.Command {
 	return NewEditCmd(customTemplatesDir, configDir)
 }

@@ -41,36 +41,26 @@ func Detect(configEditor string) string {
 // It automatically adds --wait flag for GUI editors if not already present.
 // For directories, use PrepareCommandForDir instead as --wait doesn't work with directories.
 func PrepareCommand(editor, target string) []string {
-	return prepareCommandInternal(editor, target, true)
+	return prepareCommandInternal(editor, target, waitFlagAdd)
 }
 
 // PrepareCommandForDir returns the command arguments to launch the editor with a directory.
-// Unlike PrepareCommand, it does not add --wait flag and removes any existing --wait flag
-// since GUI editors don't support waiting for directories to be closed.
+// Unlike PrepareCommand, it removes any existing --wait flag since GUI editors don't support
+// waiting for directories to be closed.
 func PrepareCommandForDir(editor, target string) []string {
-	parts := strings.Fields(editor)
-	if len(parts) == 0 {
-		return []string{platformDefault(), target}
-	}
-
-	editorName := parts[0]
-	args := parts[1:]
-
-	// Remove --wait flag for directories as it doesn't work
-	if needsWaitFlag(editorName) {
-		args = removeWaitFlag(args)
-	}
-
-	result := make([]string, 0, len(args)+2)
-	result = append(result, editorName)
-	result = append(result, args...)
-	result = append(result, target)
-
-	return result
+	return prepareCommandInternal(editor, target, waitFlagRemove)
 }
 
+// waitFlagMode determines how to handle the --wait flag
+type waitFlagMode int
+
+const (
+	waitFlagAdd    waitFlagMode = iota // Add --wait if needed
+	waitFlagRemove                     // Remove --wait if present
+)
+
 // prepareCommandInternal is the internal implementation for preparing editor commands.
-func prepareCommandInternal(editor, target string, addWaitFlag bool) []string {
+func prepareCommandInternal(editor, target string, mode waitFlagMode) []string {
 	parts := strings.Fields(editor)
 	if len(parts) == 0 {
 		return []string{platformDefault(), target}
@@ -79,9 +69,16 @@ func prepareCommandInternal(editor, target string, addWaitFlag bool) []string {
 	editorName := parts[0]
 	args := parts[1:]
 
-	// Add --wait flag for GUI editors if not already present and if requested
-	if addWaitFlag && needsWaitFlag(editorName) && !hasWaitFlag(args) {
-		args = append(args, "--wait")
+	// Handle --wait flag based on mode
+	if needsWaitFlag(editorName) {
+		switch mode {
+		case waitFlagAdd:
+			if !hasWaitFlag(args) {
+				args = append(args, "--wait")
+			}
+		case waitFlagRemove:
+			args = removeWaitFlag(args)
+		}
 	}
 
 	result := make([]string, 0, len(args)+2)
