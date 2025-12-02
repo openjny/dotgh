@@ -77,7 +77,7 @@ func TestEditCmdTemplateNotFound(t *testing.T) {
 	}
 }
 
-func TestEditCmdTemplateExists(t *testing.T) {
+func TestEditCmdWithExistingTemplateValidatesPath(t *testing.T) {
 	// Create a template directory
 	templatesDir := t.TempDir()
 	templateName := "my-template"
@@ -86,22 +86,25 @@ func TestEditCmdTemplateExists(t *testing.T) {
 		t.Fatalf("failed to create template directory: %v", err)
 	}
 
-	// Create a config directory with a config file
+	// Create a config directory
 	configDir := t.TempDir()
-	if err := os.MkdirAll(configDir, 0755); err != nil {
-		t.Fatalf("failed to create config directory: %v", err)
+
+	// Test that getTemplatePath correctly validates an existing template
+	path, err := getTemplatePath(templatesDir, templateName)
+	if err != nil {
+		t.Fatalf("getTemplatePath should succeed for existing template: %v", err)
+	}
+	if path != templateDir {
+		t.Errorf("expected path %q, got %q", templateDir, path)
 	}
 
-	// Test that the template path is correctly validated
-	// We can't actually launch an editor in tests, so we test the validation
-	// and command building logic
-	templatePath := filepath.Join(templatesDir, templateName)
-	info, err := os.Stat(templatePath)
-	if err != nil {
-		t.Fatalf("template directory should exist: %v", err)
+	// Test that the command is properly constructed
+	cmd := NewEditCmd(templatesDir, configDir)
+	if cmd.Use != "edit <template>" {
+		t.Errorf("expected Use to be 'edit <template>', got %q", cmd.Use)
 	}
-	if !info.IsDir() {
-		t.Error("template should be a directory")
+	if cmd.Args == nil {
+		t.Error("command should have Args validation")
 	}
 }
 
