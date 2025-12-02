@@ -160,3 +160,132 @@ func TestMatchPattern(t *testing.T) {
 		})
 	}
 }
+
+func TestFilterExcludes(t *testing.T) {
+	tests := []struct {
+		name            string
+		files           []string
+		excludePatterns []string
+		want            []string
+		wantErr         bool
+	}{
+		{
+			name:            "no excludes returns all files",
+			files:           []string{"AGENTS.md", ".github/prompts/test.prompt.md"},
+			excludePatterns: nil,
+			want:            []string{"AGENTS.md", ".github/prompts/test.prompt.md"},
+			wantErr:         false,
+		},
+		{
+			name:            "empty excludes returns all files",
+			files:           []string{"AGENTS.md", ".github/prompts/test.prompt.md"},
+			excludePatterns: []string{},
+			want:            []string{"AGENTS.md", ".github/prompts/test.prompt.md"},
+			wantErr:         false,
+		},
+		{
+			name:            "exact match exclude",
+			files:           []string{"AGENTS.md", ".github/prompts/test.prompt.md", ".github/prompts/local.prompt.md"},
+			excludePatterns: []string{".github/prompts/local.prompt.md"},
+			want:            []string{"AGENTS.md", ".github/prompts/test.prompt.md"},
+			wantErr:         false,
+		},
+		{
+			name:            "wildcard exclude",
+			files:           []string{"AGENTS.md", ".github/prompts/test.prompt.md", ".github/prompts/secret-key.prompt.md", ".github/prompts/secret-token.prompt.md"},
+			excludePatterns: []string{".github/prompts/secret-*.prompt.md"},
+			want:            []string{"AGENTS.md", ".github/prompts/test.prompt.md"},
+			wantErr:         false,
+		},
+		{
+			name:            "multiple exclude patterns",
+			files:           []string{"AGENTS.md", ".github/prompts/test.prompt.md", ".github/prompts/local.prompt.md", ".vscode/mcp.json"},
+			excludePatterns: []string{".github/prompts/local.prompt.md", ".vscode/mcp.json"},
+			want:            []string{"AGENTS.md", ".github/prompts/test.prompt.md"},
+			wantErr:         false,
+		},
+		{
+			name:            "exclude all files",
+			files:           []string{"AGENTS.md"},
+			excludePatterns: []string{"AGENTS.md"},
+			want:            []string{},
+			wantErr:         false,
+		},
+		{
+			name:            "exclude pattern matches nothing",
+			files:           []string{"AGENTS.md", ".github/prompts/test.prompt.md"},
+			excludePatterns: []string{"nonexistent.md"},
+			want:            []string{"AGENTS.md", ".github/prompts/test.prompt.md"},
+			wantErr:         false,
+		},
+		{
+			name:            "empty files list",
+			files:           []string{},
+			excludePatterns: []string{"AGENTS.md"},
+			want:            []string{},
+			wantErr:         false,
+		},
+		{
+			name:            "invalid exclude pattern",
+			files:           []string{"AGENTS.md"},
+			excludePatterns: []string{"[invalid"},
+			want:            nil,
+			wantErr:         true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := FilterExcludes(tt.files, tt.excludePatterns)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Error("expected error, got nil")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			// Sort both for comparison
+			sort.Strings(got)
+			sort.Strings(tt.want)
+
+			if len(got) != len(tt.want) {
+				t.Errorf("FilterExcludes() returned %d files, want %d\ngot: %v\nwant: %v", len(got), len(tt.want), got, tt.want)
+				return
+			}
+
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("FilterExcludes()[%d] = %q, want %q", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}
+
+func TestFilterExcludesPreservesOrder(t *testing.T) {
+	// Test that FilterExcludes preserves the order of non-excluded files
+	files := []string{"c.md", "b.md", "a.md"}
+	excludePatterns := []string{}
+
+	got, err := FilterExcludes(files, excludePatterns)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Order should be preserved
+	want := []string{"c.md", "b.md", "a.md"}
+	if len(got) != len(want) {
+		t.Fatalf("FilterExcludes() returned %d files, want %d", len(got), len(want))
+	}
+
+	for i := range got {
+		if got[i] != want[i] {
+			t.Errorf("FilterExcludes()[%d] = %q, want %q (order should be preserved)", i, got[i], want[i])
+		}
+	}
+}
