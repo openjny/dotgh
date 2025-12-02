@@ -139,6 +139,38 @@ dotgh update
 dotgh update --check
 ```
 
+### `dotgh config show`
+
+Display the current configuration in YAML format.
+
+```bash
+dotgh config show
+```
+
+Example output:
+
+```yaml
+# Config file: ~/.config/dotgh/config.yaml
+includes:
+  - "AGENTS.md"
+  - ".github/agents/*.agent.md"
+  - ".github/copilot-chat-modes/*.chatmode.md"
+  - ".github/copilot-instructions.md"
+  - ".github/instructions/*.instructions.md"
+  - ".github/prompts/*.prompt.md"
+  - ".vscode/mcp.json"
+```
+
+### `dotgh config edit`
+
+Open the configuration file in your preferred editor.
+
+```bash
+dotgh config edit
+```
+
+If the config file doesn't exist, it will be created with default values first.
+
 ---
 
 ## Configuration
@@ -157,6 +189,7 @@ dotgh uses a YAML configuration file located at:
 You can customize which files are managed by templates by creating a `config.yaml`:
 
 ```yaml
+editor: "code --wait"  # Optional: override the default editor
 includes:
   - "AGENTS.md"
   - ".github/agents/*.agent.md"
@@ -166,6 +199,19 @@ includes:
   - ".github/prompts/*.prompt.md"
   - ".vscode/mcp.json"
 ```
+
+### Editor Configuration
+
+The `editor` field is optional and specifies the editor to use for `dotgh config edit`.
+
+If not set, dotgh uses the following priority order:
+
+1. `VISUAL` environment variable
+2. `EDITOR` environment variable
+3. `GIT_EDITOR` environment variable
+4. Platform default (`vi` on Linux/macOS, `notepad` on Windows)
+
+For GUI editors like VS Code or Sublime Text, the `--wait` flag is automatically added to ensure the command waits until the editor is closed.
 
 #### Default Targets
 

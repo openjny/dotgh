@@ -100,3 +100,110 @@ func TestGetConfigDir(t *testing.T) {
 		t.Errorf("GetConfigDir() should return absolute path, got %q", dir)
 	}
 }
+
+func TestGetConfigPath(t *testing.T) {
+	path := GetConfigPath()
+	if path == "" {
+		t.Error("GetConfigPath() returned empty string")
+	}
+
+	// Should be an absolute path ending with config.yaml
+	if !filepath.IsAbs(path) {
+		t.Errorf("GetConfigPath() should return absolute path, got %q", path)
+	}
+
+	if filepath.Base(path) != "config.yaml" {
+		t.Errorf("GetConfigPath() should end with config.yaml, got %q", path)
+	}
+}
+
+func TestLoadFromDirWithEditor(t *testing.T) {
+	tests := []struct {
+		name       string
+		configYAML string
+		wantEditor string
+	}{
+		{
+			name:       "no editor field",
+			configYAML: "includes: []\n",
+			wantEditor: "",
+		},
+		{
+			name: "with editor field",
+			configYAML: `editor: "vim"
+includes: []
+`,
+			wantEditor: "vim",
+		},
+		{
+			name: "editor with arguments",
+			configYAML: `editor: "code --wait"
+includes: []
+`,
+			wantEditor: "code --wait",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tempDir := t.TempDir()
+
+			configPath := filepath.Join(tempDir, "config.yaml")
+			if err := os.WriteFile(configPath, []byte(tt.configYAML), 0644); err != nil {
+				t.Fatalf("failed to write config file: %v", err)
+			}
+
+			cfg, err := LoadFromDir(tempDir)
+			if err != nil {
+				t.Fatalf("LoadFromDir() error = %v", err)
+			}
+
+			if cfg.Editor != tt.wantEditor {
+				t.Errorf("Editor = %q, want %q", cfg.Editor, tt.wantEditor)
+			}
+		})
+	}
+}
+
+func TestCreateDefaultConfigFile(t *testing.T) {
+	tempDir := t.TempDir()
+	configPath := filepath.Join(tempDir, "config.yaml")
+
+	// Create default config file
+	err := CreateDefaultConfigFile(configPath)
+	if err != nil {
+		t.Fatalf("CreateDefaultConfigFile() error = %v", err)
+	}
+
+	// Verify file exists
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		t.Fatal("config file was not created")
+	}
+
+	// Load and verify contents
+	cfg, err := LoadFromDir(tempDir)
+	if err != nil {
+		t.Fatalf("LoadFromDir() error = %v", err)
+	}
+
+	if !reflect.DeepEqual(cfg.Includes, DefaultIncludes) {
+		t.Errorf("Includes = %v, want %v", cfg.Includes, DefaultIncludes)
+	}
+}
+
+func TestCreateDefaultConfigFileInNestedDir(t *testing.T) {
+	tempDir := t.TempDir()
+	nestedDir := filepath.Join(tempDir, "nested", "dir")
+	configPath := filepath.Join(nestedDir, "config.yaml")
+
+	// Create default config file in nested directory (should create parent dirs)
+	err := CreateDefaultConfigFile(configPath)
+	if err != nil {
+		t.Fatalf("CreateDefaultConfigFile() error = %v", err)
+	}
+
+	// Verify file exists
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		t.Fatal("config file was not created")
+	}
+}
