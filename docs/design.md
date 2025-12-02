@@ -53,7 +53,7 @@ dotgh [command] [flags]
 | `update`       | None         | `-c, --check`     | Update dotgh itself to the latest version           | Implemented |
 | `version`      | None         | None              | Display version information                         | Implemented |
 | `config`       | None         | None              | Manage dotgh configuration (parent command)         | Implemented |
-| `config list`  | None         | None              | Display current configuration in YAML format        | Implemented |
+| `config show`  | None         | None              | Display current configuration in YAML format        | Implemented |
 | `config edit`  | None         | None              | Open configuration file in the user's preferred editor | Implemented |
 
 ## Template Targets

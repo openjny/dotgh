@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestConfigListWithNoConfigFile(t *testing.T) {
+func TestConfigShowWithNoConfigFile(t *testing.T) {
 	// Create temp directory without config file
 	tmpDir := t.TempDir()
 	configDir := filepath.Join(tmpDir, "dotgh")
@@ -16,12 +16,12 @@ func TestConfigListWithNoConfigFile(t *testing.T) {
 		t.Fatalf("failed to create config directory: %v", err)
 	}
 
-	cmd := NewConfigListCmd(configDir)
+	cmd := NewConfigShowCmd(configDir)
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	err := cmd.Execute()
 	if err != nil {
-		t.Fatalf("config list command failed: %v", err)
+		t.Fatalf("config show command failed: %v", err)
 	}
 
 	output := buf.String()
@@ -37,7 +37,7 @@ func TestConfigListWithNoConfigFile(t *testing.T) {
 	}
 }
 
-func TestConfigListWithExistingConfigFile(t *testing.T) {
+func TestConfigShowWithExistingConfigFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	configDir := filepath.Join(tmpDir, "dotgh")
 	if err := os.MkdirAll(configDir, 0755); err != nil {
@@ -55,12 +55,12 @@ includes:
 		t.Fatalf("failed to create config file: %v", err)
 	}
 
-	cmd := NewConfigListCmd(configDir)
+	cmd := NewConfigShowCmd(configDir)
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	err := cmd.Execute()
 	if err != nil {
-		t.Fatalf("config list command failed: %v", err)
+		t.Fatalf("config show command failed: %v", err)
 	}
 
 	output := buf.String()
@@ -79,19 +79,19 @@ includes:
 	}
 }
 
-func TestConfigListOutputFormat(t *testing.T) {
+func TestConfigShowOutputFormat(t *testing.T) {
 	tmpDir := t.TempDir()
 	configDir := filepath.Join(tmpDir, "dotgh")
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		t.Fatalf("failed to create config directory: %v", err)
 	}
 
-	cmd := NewConfigListCmd(configDir)
+	cmd := NewConfigShowCmd(configDir)
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	err := cmd.Execute()
 	if err != nil {
-		t.Fatalf("config list command failed: %v", err)
+		t.Fatalf("config show command failed: %v", err)
 	}
 
 	output := buf.String()
@@ -179,20 +179,20 @@ func TestConfigParentCommand(t *testing.T) {
 		t.Errorf("config command should have at least 2 subcommands, got %d", len(subCommands))
 	}
 
-	// Check for list and edit subcommands
-	hasListCmd := false
+	// Check for show and edit subcommands
+	hasShowCmd := false
 	hasEditCmd := false
 	for _, sub := range subCommands {
-		if sub.Name() == "list" {
-			hasListCmd = true
+		if sub.Name() == "show" {
+			hasShowCmd = true
 		}
 		if sub.Name() == "edit" {
 			hasEditCmd = true
 		}
 	}
 
-	if !hasListCmd {
-		t.Error("config command should have 'list' subcommand")
+	if !hasShowCmd {
+		t.Error("config command should have 'show' subcommand")
 	}
 	if !hasEditCmd {
 		t.Error("config command should have 'edit' subcommand")

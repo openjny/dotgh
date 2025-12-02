@@ -139,12 +139,12 @@ dotgh update
 dotgh update --check
 ```
 
-### `dotgh config list`
+### `dotgh config show`
 
 Display the current configuration in YAML format.
 
 ```bash
-dotgh config list
+dotgh config show
 ```
 
 Example output:

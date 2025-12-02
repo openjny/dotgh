@@ -18,11 +18,11 @@ var configCmd = &cobra.Command{
 	Long:  `View and edit the dotgh configuration file.`,
 }
 
-var configListCmd = &cobra.Command{
-	Use:   "list",
+var configShowCmd = &cobra.Command{
+	Use:   "show",
 	Short: "Display current configuration in YAML format",
 	Long:  `Display the current configuration settings from the config file or defaults if no file exists.`,
-	RunE:  runConfigList,
+	RunE:  runConfigShow,
 }
 
 var configEditCmd = &cobra.Command{
@@ -34,7 +34,7 @@ If the config file doesn't exist, it will be created with default values first.`
 }
 
 func init() {
-	configCmd.AddCommand(configListCmd)
+	configCmd.AddCommand(configShowCmd)
 	configCmd.AddCommand(configEditCmd)
 }
 
@@ -46,8 +46,8 @@ func NewConfigCmd() *cobra.Command {
 		Long:  `View and edit the dotgh configuration file.`,
 	}
 
-	listCmd := &cobra.Command{
-		Use:   "list",
+	showCmd := &cobra.Command{
+		Use:   "show",
 		Short: "Display current configuration in YAML format",
 	}
 	editCmd := &cobra.Command{
@@ -55,18 +55,18 @@ func NewConfigCmd() *cobra.Command {
 		Short: "Open configuration file in the user's preferred editor",
 	}
 
-	cmd.AddCommand(listCmd)
+	cmd.AddCommand(showCmd)
 	cmd.AddCommand(editCmd)
 	return cmd
 }
 
-// NewConfigListCmd creates a new config list command with a custom config directory.
-func NewConfigListCmd(configDir string) *cobra.Command {
+// NewConfigShowCmd creates a new config show command with a custom config directory.
+func NewConfigShowCmd(configDir string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "list",
+		Use:   "show",
 		Short: "Display current configuration in YAML format",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runConfigListWithDir(cmd, configDir)
+			return runConfigShowWithDir(cmd, configDir)
 		},
 	}
 	return cmd
@@ -84,11 +84,11 @@ func NewConfigEditCmd(configDir string) *cobra.Command {
 	return cmd
 }
 
-func runConfigList(cmd *cobra.Command, args []string) error {
-	return runConfigListWithDir(cmd, config.GetConfigDir())
+func runConfigShow(cmd *cobra.Command, args []string) error {
+	return runConfigShowWithDir(cmd, config.GetConfigDir())
 }
 
-func runConfigListWithDir(cmd *cobra.Command, configDir string) error {
+func runConfigShowWithDir(cmd *cobra.Command, configDir string) error {
 	configPath := filepath.Join(configDir, "config.yaml")
 	w := cmd.OutOrStdout()
 
