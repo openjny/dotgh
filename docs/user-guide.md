@@ -159,6 +159,8 @@ You can customize which files are managed by templates by creating a `config.yam
 ```yaml
 includes:
   - "AGENTS.md"
+  - ".github/agents/*.agent.md"
+  - ".github/copilot-chat-modes/*.chatmode.md"
   - ".github/copilot-instructions.md"
   - ".github/instructions/*.instructions.md"
   - ".github/prompts/*.prompt.md"
@@ -170,6 +172,8 @@ includes:
 If no config file exists, the following default patterns are used:
 
 - `AGENTS.md` - AI agent instructions
+- `.github/agents/*.agent.md` - Custom agent profiles
+- `.github/copilot-chat-modes/*.chatmode.md` - Custom chat modes
 - `.github/copilot-instructions.md` - GitHub Copilot instructions
 - `.github/instructions/*.instructions.md` - Custom instruction files
 - `.github/prompts/*.prompt.md` - Prompt templates

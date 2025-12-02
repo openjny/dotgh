@@ -10,6 +10,8 @@ import (
 func TestDefaultIncludes(t *testing.T) {
 	expected := []string{
 		"AGENTS.md",
+		".github/agents/*.agent.md",
+		".github/copilot-chat-modes/*.chatmode.md",
 		".github/copilot-instructions.md",
 		".github/instructions/*.instructions.md",
 		".github/prompts/*.prompt.md",
