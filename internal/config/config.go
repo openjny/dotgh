@@ -23,6 +23,7 @@ var DefaultIncludes = []string{
 
 // Config represents the dotgh configuration.
 type Config struct {
+	Editor   string   `yaml:"editor,omitempty"`
 	Includes []string `yaml:"includes"`
 }
 
@@ -36,6 +37,11 @@ func GetConfigDir() string {
 		configDir = filepath.Join(home, ".config")
 	}
 	return filepath.Join(configDir, "dotgh")
+}
+
+// GetConfigPath returns the path to the dotgh configuration file.
+func GetConfigPath() string {
+	return filepath.Join(GetConfigDir(), "config.yaml")
 }
 
 // Load loads the configuration from the default config directory.
@@ -64,4 +70,30 @@ func LoadFromDir(dir string) (*Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+// CreateDefaultConfigFile creates a config file with default values at the specified path.
+// It creates parent directories if they don't exist.
+func CreateDefaultConfigFile(path string) error {
+	// Create parent directories if they don't exist
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("create config directory: %w", err)
+	}
+
+	// Create default config
+	cfg := &Config{
+		Includes: DefaultIncludes,
+	}
+
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return fmt.Errorf("marshal config: %w", err)
+	}
+
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		return fmt.Errorf("write config file: %w", err)
+	}
+
+	return nil
 }
