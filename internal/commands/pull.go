@@ -90,6 +90,12 @@ func pullTemplate(cmd *cobra.Command, templateName, templatesDir, targetDir stri
 		return fmt.Errorf("expand patterns: %w", err)
 	}
 
+	// Filter out excluded files
+	files, err = glob.FilterExcludes(files, cfg.Excludes)
+	if err != nil {
+		return fmt.Errorf("filter excludes: %w", err)
+	}
+
 	if len(files) == 0 {
 		_, _ = fmt.Fprintln(w, "  (no matching files found in template)")
 		return nil

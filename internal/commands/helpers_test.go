@@ -16,6 +16,14 @@ func testConfig() *config.Config {
 	}
 }
 
+// testConfigWithExcludes returns a config with the default includes and specified excludes.
+func testConfigWithExcludes(excludes []string) *config.Config {
+	return &config.Config{
+		Includes: config.DefaultIncludes,
+		Excludes: excludes,
+	}
+}
+
 // createTestFile creates a file at the given path with the specified content.
 // It creates parent directories as needed.
 func createTestFile(t *testing.T, basePath, relativePath, content string) {
