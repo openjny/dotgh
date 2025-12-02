@@ -272,6 +272,8 @@ Target patterns support standard glob syntax:
 - `?` matches any single character
 - `[abc]` matches any character in the set
 
+> **Note:** Recursive patterns (`**`) are not supported. Use explicit directory paths like `.github/prompts/*.prompt.md` instead of `**/*.prompt.md`.
+
 Examples:
 
 ```yaml
