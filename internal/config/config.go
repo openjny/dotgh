@@ -25,6 +25,7 @@ var DefaultIncludes = []string{
 type Config struct {
 	Editor   string   `yaml:"editor,omitempty"`
 	Includes []string `yaml:"includes"`
+	Excludes []string `yaml:"excludes,omitempty"`
 }
 
 // GetConfigDir returns the path to the dotgh configuration directory.

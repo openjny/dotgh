@@ -207,3 +207,92 @@ func TestCreateDefaultConfigFileInNestedDir(t *testing.T) {
 		t.Fatal("config file was not created")
 	}
 }
+
+func TestLoadFromDirWithExcludes(t *testing.T) {
+	tests := []struct {
+		name         string
+		configYAML   string
+		wantExcludes []string
+	}{
+		{
+			name:         "no excludes field returns nil",
+			configYAML:   "includes: []\n",
+			wantExcludes: nil,
+		},
+		{
+			name: "empty excludes",
+			configYAML: `includes: []
+excludes: []
+`,
+			wantExcludes: []string{},
+		},
+		{
+			name: "single exclude pattern",
+			configYAML: `includes: []
+excludes:
+  - ".github/prompts/local.prompt.md"
+`,
+			wantExcludes: []string{".github/prompts/local.prompt.md"},
+		},
+		{
+			name: "multiple exclude patterns",
+			configYAML: `includes: []
+excludes:
+  - ".github/prompts/local.prompt.md"
+  - ".github/prompts/secret-*.prompt.md"
+  - "AGENTS.md"
+`,
+			wantExcludes: []string{
+				".github/prompts/local.prompt.md",
+				".github/prompts/secret-*.prompt.md",
+				"AGENTS.md",
+			},
+		},
+		{
+			name: "excludes with includes",
+			configYAML: `includes:
+  - "AGENTS.md"
+  - ".github/prompts/*.prompt.md"
+excludes:
+  - ".github/prompts/local.prompt.md"
+`,
+			wantExcludes: []string{".github/prompts/local.prompt.md"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tempDir := t.TempDir()
+
+			configPath := filepath.Join(tempDir, "config.yaml")
+			if err := os.WriteFile(configPath, []byte(tt.configYAML), 0644); err != nil {
+				t.Fatalf("failed to write config file: %v", err)
+			}
+
+			cfg, err := LoadFromDir(tempDir)
+			if err != nil {
+				t.Fatalf("LoadFromDir() error = %v", err)
+			}
+
+			if !reflect.DeepEqual(cfg.Excludes, tt.wantExcludes) {
+				t.Errorf("Excludes = %v, want %v", cfg.Excludes, tt.wantExcludes)
+			}
+		})
+	}
+}
+
+func TestDefaultExcludes(t *testing.T) {
+	// Test that default config has no excludes (nil or empty)
+	tempDir := t.TempDir()
+	// No config file - should return defaults
+
+	cfg, err := LoadFromDir(tempDir)
+	if err != nil {
+		t.Fatalf("LoadFromDir() error = %v", err)
+	}
+
+	// Default excludes should be nil or empty
+	if len(cfg.Excludes) != 0 {
+		t.Errorf("Default Excludes should be empty, got %v", cfg.Excludes)
+	}
+}
