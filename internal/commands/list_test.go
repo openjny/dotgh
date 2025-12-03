@@ -38,8 +38,8 @@ func executeListCmd(t *testing.T, templatesDir string) (string, error) {
 func TestRunList(t *testing.T) {
 	tests := []struct {
 		name           string
-		setupTemplates []string // テンプレートディレクトリ名のリスト
-		wantContains   []string // 出力に含まれるべき文字列
+		setupTemplates []string // list of template directory names
+		wantContains   []string // strings that should be in the output
 		wantErr        bool
 	}{
 		{
@@ -82,7 +82,7 @@ func TestRunList(t *testing.T) {
 }
 
 func TestRunListWithNonExistentDir(t *testing.T) {
-	// 存在しないディレクトリを指定
+	// Specify a non-existent directory
 	tmpDir := t.TempDir()
 	nonExistentDir := filepath.Join(tmpDir, "non-existent", "templates")
 
@@ -97,10 +97,10 @@ func TestRunListWithNonExistentDir(t *testing.T) {
 }
 
 func TestRunListIgnoresFiles(t *testing.T) {
-	// ファイルはテンプレートとして扱わないことを確認
+	// Verify that files are not treated as templates
 	templatesDir := setupTestTemplatesDir(t, []string{"real-template"})
 
-	// ファイルを1つ作成（これは無視されるべき）
+	// Create a file (this should be ignored)
 	if err := os.WriteFile(filepath.Join(templatesDir, "not-a-template.txt"), []byte("test"), 0644); err != nil {
 		t.Fatalf("failed to create file: %v", err)
 	}

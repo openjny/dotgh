@@ -4,7 +4,10 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
 func TestDefaultIncludes(t *testing.T) {
@@ -235,5 +238,157 @@ func TestCreateDefaultConfigFileInNestedDir(t *testing.T) {
 	// Verify file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		t.Fatal("config file was not created")
+	}
+}
+
+func TestGenerateDefaultConfigContent(t *testing.T) {
+	content := GenerateDefaultConfigContent()
+
+	tests := []struct {
+		name     string
+		contains string
+	}{
+		{
+			name:     "contains editor comment",
+			contains: "# editor:",
+		},
+		{
+			name:     "contains editor description",
+			contains: "Specify the editor command",
+		},
+		{
+			name:     "contains VISUAL/EDITOR environment variables mention",
+			contains: "VISUAL, EDITOR, GIT_EDITOR",
+		},
+		{
+			name:     "contains includes comment",
+			contains: "# includes:",
+		},
+		{
+			name:     "contains includes description",
+			contains: "Specify file patterns to manage as templates",
+		},
+		{
+			name:     "contains glob description",
+			contains: "glob patterns",
+		},
+		{
+			name:     "contains includes field",
+			contains: "includes:",
+		},
+		{
+			name:     "contains AGENTS.md",
+			contains: `"AGENTS.md"`,
+		},
+		{
+			name:     "contains excludes comment",
+			contains: "# excludes:",
+		},
+		{
+			name:     "contains excludes description",
+			contains: "Specify patterns to exclude from matched includes",
+		},
+		{
+			name:     "contains commented excludes example",
+			contains: "#   - ",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if !strings.Contains(content, tt.contains) {
+				t.Errorf("GenerateDefaultConfigContent() should contain %q\nGot:\n%s", tt.contains, content)
+			}
+		})
+	}
+}
+
+func TestGenerateDefaultConfigContentContainsAllDefaultIncludes(t *testing.T) {
+	content := GenerateDefaultConfigContent()
+
+	for _, include := range DefaultIncludes {
+		if !strings.Contains(content, include) {
+			t.Errorf("GenerateDefaultConfigContent() should contain default include %q\nGot:\n%s", include, content)
+		}
+	}
+}
+
+func TestGenerateDefaultConfigContentIsParseable(t *testing.T) {
+	content := GenerateDefaultConfigContent()
+
+	var cfg Config
+	err := yaml.Unmarshal([]byte(content), &cfg)
+	if err != nil {
+		t.Fatalf("GenerateDefaultConfigContent() should produce valid YAML, got error: %v\nContent:\n%s", err, content)
+	}
+
+	// Verify parsed includes match DefaultIncludes
+	if !reflect.DeepEqual(cfg.Includes, DefaultIncludes) {
+		t.Errorf("Parsed Includes = %v, want %v", cfg.Includes, DefaultIncludes)
+	}
+
+	// editor should be empty (commented out)
+	if cfg.Editor != "" {
+		t.Errorf("Parsed Editor = %q, want empty string", cfg.Editor)
+	}
+
+	// excludes should be nil (commented out)
+	if cfg.Excludes != nil {
+		t.Errorf("Parsed Excludes = %v, want nil", cfg.Excludes)
+	}
+}
+
+func TestCreateDefaultConfigFileWithComments(t *testing.T) {
+	tempDir := t.TempDir()
+	configPath := filepath.Join(tempDir, "config.yaml")
+
+	// Create default config file
+	err := CreateDefaultConfigFile(configPath)
+	if err != nil {
+		t.Fatalf("CreateDefaultConfigFile() error = %v", err)
+	}
+
+	// Read file content
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("failed to read config file: %v", err)
+	}
+	content := string(data)
+
+	// Verify comments are present
+	tests := []struct {
+		name     string
+		contains string
+	}{
+		{
+			name:     "contains editor comment",
+			contains: "# editor:",
+		},
+		{
+			name:     "contains includes comment",
+			contains: "# includes:",
+		},
+		{
+			name:     "contains excludes comment",
+			contains: "# excludes:",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if !strings.Contains(content, tt.contains) {
+				t.Errorf("Created config file should contain %q\nGot:\n%s", tt.contains, content)
+			}
+		})
+	}
+
+	// Verify file is still parseable and has correct values
+	cfg, err := LoadFromDir(tempDir)
+	if err != nil {
+		t.Fatalf("LoadFromDir() error = %v", err)
+	}
+
+	if !reflect.DeepEqual(cfg.Includes, DefaultIncludes) {
+		t.Errorf("Includes = %v, want %v", cfg.Includes, DefaultIncludes)
 	}
 }
