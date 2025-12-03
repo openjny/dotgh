@@ -16,16 +16,10 @@ func TestEditCmdValidation(t *testing.T) {
 		errorMsg  string
 	}{
 		{
-			name:      "no arguments",
-			args:      []string{},
-			wantError: true,
-			errorMsg:  "accepts 1 arg(s), received 0",
-		},
-		{
 			name:      "too many arguments",
 			args:      []string{"template1", "template2"},
 			wantError: true,
-			errorMsg:  "accepts 1 arg(s), received 2",
+			errorMsg:  "accepts at most 1 arg(s), received 2",
 		},
 	}
 
@@ -100,8 +94,8 @@ func TestEditCmdWithExistingTemplateValidatesPath(t *testing.T) {
 
 	// Test that the command is properly constructed
 	cmd := NewEditCmd(templatesDir, configDir)
-	if cmd.Use != "edit <template>" {
-		t.Errorf("expected Use to be 'edit <template>', got %q", cmd.Use)
+	if cmd.Use != "edit [template]" {
+		t.Errorf("expected Use to be 'edit [template]', got %q", cmd.Use)
 	}
 	if cmd.Args == nil {
 		t.Error("command should have Args validation")
@@ -202,7 +196,71 @@ includes:
 	}
 
 	// Verify command is properly configured
-	if cmd.Use != "edit <template>" {
-		t.Errorf("expected Use to be 'edit <template>', got %q", cmd.Use)
+	if cmd.Use != "edit [template]" {
+		t.Errorf("expected Use to be 'edit [template]', got %q", cmd.Use)
+	}
+}
+
+func TestEditCmdNoArgs(t *testing.T) {
+	tests := []struct {
+		name              string
+		templatesDirExist bool
+		wantError         bool
+		errorContains     string
+	}{
+		{
+			name:              "templates directory exists",
+			templatesDirExist: true,
+			wantError:         false,
+		},
+		{
+			name:              "templates directory does not exist",
+			templatesDirExist: false,
+			wantError:         true,
+			errorContains:     "templates directory not found",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var templatesDir string
+			if tt.templatesDirExist {
+				templatesDir = t.TempDir()
+			} else {
+				templatesDir = filepath.Join(t.TempDir(), "non-existent")
+			}
+			configDir := t.TempDir()
+
+			// Create config with echo as editor (safe command that exits immediately)
+			configContent := `editor: "echo"
+includes:
+  - "*.md"
+`
+			if err := os.WriteFile(filepath.Join(configDir, "config.yaml"), []byte(configContent), 0644); err != nil {
+				t.Fatalf("failed to create config file: %v", err)
+			}
+
+			cmd := NewEditCmd(templatesDir, configDir)
+			cmd.SetArgs([]string{})
+
+			var buf bytes.Buffer
+			cmd.SetOut(&buf)
+			cmd.SetErr(&buf)
+
+			err := cmd.Execute()
+			if tt.wantError {
+				if err == nil {
+					t.Error("expected error, got nil")
+					return
+				}
+				if !strings.Contains(err.Error(), tt.errorContains) {
+					t.Errorf("expected error containing %q, got %q", tt.errorContains, err.Error())
+				}
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+			}
+		})
 	}
 }
