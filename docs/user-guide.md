@@ -119,15 +119,19 @@ dotgh delete my-template
 dotgh delete my-template -f
 ```
 
-### `dotgh edit <template>`
+### `dotgh edit [template]`
 
-Open a template in your preferred editor.
+Open a template or the templates directory in your preferred editor.
 
 ```bash
+# Open templates directory
+dotgh edit
+
+# Open a specific template
 dotgh edit my-template
 ```
 
-This opens the template directory in the configured editor, allowing you to modify template files directly.
+When called without arguments, opens the templates directory (`~/.config/dotgh/templates/`) in the editor. When a template name is provided, opens that specific template directory.
 
 ### `dotgh version`
 
