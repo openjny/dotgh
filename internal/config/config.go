@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -59,7 +60,7 @@ func LoadFromDir(dir string) (*Config, error) {
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			// Return default config if file doesn't exist
+			// Return default config if file does not exist
 			return &Config{Includes: DefaultIncludes}, nil
 		}
 		return nil, fmt.Errorf("read config file: %w", err)
@@ -73,26 +74,56 @@ func LoadFromDir(dir string) (*Config, error) {
 	return &cfg, nil
 }
 
+// GenerateDefaultConfigContent generates the default configuration file content
+// with comments explaining each field.
+func GenerateDefaultConfigContent() string {
+	var sb strings.Builder
+
+	// Editor section (commented out)
+	sb.WriteString("# editor: Specify the editor command (e.g., \"code --wait\", \"vim\")\n")
+	sb.WriteString("# editor: エディタコマンドを指定します（例: \"code --wait\", \"vim\"）\n")
+	sb.WriteString("# If not set, VISUAL, EDITOR, GIT_EDITOR environment variables,\n")
+	sb.WriteString("# or platform defaults (Linux/macOS: vi, Windows: notepad) will be used.\n")
+	sb.WriteString("# 未設定の場合、VISUAL, EDITOR, GIT_EDITOR 環境変数、\n")
+	sb.WriteString("# またはプラットフォームデフォルト（Linux/macOS: vi, Windows: notepad）が使用されます\n")
+	sb.WriteString("# editor: \"\"\n")
+	sb.WriteString("\n")
+
+	// Includes section
+	sb.WriteString("# includes: Specify file patterns to manage as templates (required)\n")
+	sb.WriteString("# includes: テンプレートとして管理するファイルパターンを指定します（必須）\n")
+	sb.WriteString("# Supports glob patterns (*, ?, [abc]). ** (recursive) is not supported.\n")
+	sb.WriteString("# glob形式（*, ?, [abc]）をサポート。**（再帰パターン）は未サポート。\n")
+	sb.WriteString("includes:\n")
+	for _, include := range DefaultIncludes {
+		sb.WriteString(fmt.Sprintf("  - \"%s\"\n", include))
+	}
+	sb.WriteString("\n")
+
+	// Excludes section (commented out)
+	sb.WriteString("# excludes: Specify patterns to exclude from matched includes\n")
+	sb.WriteString("# excludes: includes にマッチしたファイルから除外するパターンを指定します\n")
+	sb.WriteString("# Useful for excluding local configs or sensitive files.\n")
+	sb.WriteString("# ローカル設定や機密ファイルの除外に便利です\n")
+	sb.WriteString("# excludes:\n")
+	sb.WriteString("#   - \".github/prompts/local.prompt.md\"\n")
+	sb.WriteString("#   - \".github/prompts/secret-*.prompt.md\"\n")
+
+	return sb.String()
+}
+
 // CreateDefaultConfigFile creates a config file with default values at the specified path.
-// It creates parent directories if they don't exist.
+// It creates parent directories if they do not exist.
 func CreateDefaultConfigFile(path string) error {
-	// Create parent directories if they don't exist
+	// Create parent directories if they do not exist
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("create config directory: %w", err)
 	}
 
-	// Create default config
-	cfg := &Config{
-		Includes: DefaultIncludes,
-	}
+	content := GenerateDefaultConfigContent()
 
-	data, err := yaml.Marshal(cfg)
-	if err != nil {
-		return fmt.Errorf("marshal config: %w", err)
-	}
-
-	if err := os.WriteFile(path, data, 0644); err != nil {
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 		return fmt.Errorf("write config file: %w", err)
 	}
 
