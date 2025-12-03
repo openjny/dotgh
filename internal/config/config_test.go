@@ -254,7 +254,7 @@ func TestGenerateDefaultConfigContent(t *testing.T) {
 		},
 		{
 			name:     "contains editor description",
-			contains: "エディタコマンドを指定します",
+			contains: "Specify the editor command",
 		},
 		{
 			name:     "contains VISUAL/EDITOR environment variables mention",
@@ -266,11 +266,11 @@ func TestGenerateDefaultConfigContent(t *testing.T) {
 		},
 		{
 			name:     "contains includes description",
-			contains: "テンプレートとして管理するファイルパターンを指定します",
+			contains: "Specify file patterns to manage as templates",
 		},
 		{
 			name:     "contains glob description",
-			contains: "glob形式",
+			contains: "glob patterns",
 		},
 		{
 			name:     "contains includes field",
@@ -286,7 +286,7 @@ func TestGenerateDefaultConfigContent(t *testing.T) {
 		},
 		{
 			name:     "contains excludes description",
-			contains: "includes にマッチしたファイルから除外するパターンを指定します",
+			contains: "Specify patterns to exclude from matched includes",
 		},
 		{
 			name:     "contains commented excludes example",

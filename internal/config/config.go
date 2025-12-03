@@ -80,15 +80,15 @@ func GenerateDefaultConfigContent() string {
 	var sb strings.Builder
 
 	// Editor section (commented out)
-	sb.WriteString("# editor: エディタコマンドを指定します（例: \"code --wait\", \"vim\"）\n")
-	sb.WriteString("# 未設定の場合、VISUAL, EDITOR, GIT_EDITOR 環境変数、\n")
-	sb.WriteString("# またはプラットフォームデフォルト（Linux/macOS: vi, Windows: notepad）が使用されます\n")
+	sb.WriteString("# editor: Specify the editor command (e.g., \"code --wait\", \"vim\")\n")
+	sb.WriteString("# If not set, VISUAL, EDITOR, GIT_EDITOR environment variables,\n")
+	sb.WriteString("# or platform defaults (Linux/macOS: vi, Windows: notepad) will be used.\n")
 	sb.WriteString("# editor: \"\"\n")
 	sb.WriteString("\n")
 
 	// Includes section
-	sb.WriteString("# includes: テンプレートとして管理するファイルパターンを指定します（必須）\n")
-	sb.WriteString("# glob形式（*, ?, [abc]）をサポート。**（再帰パターン）は未サポート。\n")
+	sb.WriteString("# includes: Specify file patterns to manage as templates (required)\n")
+	sb.WriteString("# Supports glob patterns (*, ?, [abc]). ** (recursive) is not supported.\n")
 	sb.WriteString("includes:\n")
 	for _, include := range DefaultIncludes {
 		sb.WriteString(fmt.Sprintf("  - \"%s\"\n", include))
@@ -96,8 +96,8 @@ func GenerateDefaultConfigContent() string {
 	sb.WriteString("\n")
 
 	// Excludes section (commented out)
-	sb.WriteString("# excludes: includes にマッチしたファイルから除外するパターンを指定します\n")
-	sb.WriteString("# ローカル設定や機密ファイルの除外に便利です\n")
+	sb.WriteString("# excludes: Specify patterns to exclude from matched includes\n")
+	sb.WriteString("# Useful for excluding local configs or sensitive files.\n")
 	sb.WriteString("# excludes:\n")
 	sb.WriteString("#   - \".github/prompts/local.prompt.md\"\n")
 	sb.WriteString("#   - \".github/prompts/secret-*.prompt.md\"\n")
