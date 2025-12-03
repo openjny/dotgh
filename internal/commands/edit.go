@@ -12,7 +12,10 @@ import (
 )
 
 // editCmdLong is the long description for the edit command.
-const editCmdLong = `Open the specified template directory in the user's preferred editor.
+const editCmdLong = `Open a template directory or the templates directory in the user's preferred editor.
+
+If a template name is provided, opens that specific template directory.
+If no argument is provided, opens the templates directory itself.
 
 The editor is determined in the following order:
 1. 'editor' field in config.yaml
@@ -22,10 +25,10 @@ The editor is determined in the following order:
 5. Platform default (vi on Linux/macOS, notepad on Windows)`
 
 var editCmd = &cobra.Command{
-	Use:   "edit <template>",
+	Use:   "edit [template]",
 	Short: "Open template in the user's preferred editor",
 	Long:  editCmdLong,
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	RunE:  runEdit,
 }
 
@@ -34,12 +37,29 @@ func runEdit(cmd *cobra.Command, args []string) error {
 }
 
 func runEditWithDirs(cmd *cobra.Command, args []string, templatesDir, configDir string) error {
-	templateName := args[0]
+	var targetPath string
 
-	// Get template path and validate it exists
-	templatePath, err := getTemplatePath(templatesDir, templateName)
-	if err != nil {
-		return err
+	if len(args) == 0 {
+		// No argument: open templates directory itself
+		info, err := os.Stat(templatesDir)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return fmt.Errorf("templates directory not found: %s", templatesDir)
+			}
+			return fmt.Errorf("check templates directory: %w", err)
+		}
+		if !info.IsDir() {
+			return fmt.Errorf("templates directory not found: %s", templatesDir)
+		}
+		targetPath = templatesDir
+	} else {
+		// Argument provided: open specific template
+		templateName := args[0]
+		path, err := getTemplatePath(templatesDir, templateName)
+		if err != nil {
+			return err
+		}
+		targetPath = path
 	}
 
 	// Load config to get editor setting
@@ -49,7 +69,7 @@ func runEditWithDirs(cmd *cobra.Command, args []string, templatesDir, configDir 
 	}
 
 	// Build and execute editor command (use ForDir since we're opening a directory)
-	editorArgs := buildEditorCommandForDir(cfg.Editor, templatePath)
+	editorArgs := buildEditorCommandForDir(cfg.Editor, targetPath)
 	execCmd := exec.Command(editorArgs[0], editorArgs[1:]...)
 	execCmd.Stdin = os.Stdin
 	execCmd.Stdout = os.Stdout
@@ -82,10 +102,10 @@ func getTemplatePath(templatesDir, templateName string) (string, error) {
 // This is primarily used for testing.
 func NewEditCmd(customTemplatesDir, configDir string) *cobra.Command {
 	return &cobra.Command{
-		Use:   "edit <template>",
+		Use:   "edit [template]",
 		Short: "Open template in the user's preferred editor",
 		Long:  editCmdLong,
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runEditWithDirs(cmd, args, customTemplatesDir, configDir)
 		},
