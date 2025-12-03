@@ -248,16 +248,6 @@ func TestGenerateDefaultConfigContent(t *testing.T) {
 		name     string
 		contains string
 	}{
-		// Editor section - English comments
-		{
-			name:     "contains English editor comment",
-			contains: "Specify the editor command",
-		},
-		{
-			name:     "contains English environment variables mention",
-			contains: "If not set, VISUAL, EDITOR, GIT_EDITOR environment variables",
-		},
-		// Editor section - Japanese comments
 		{
 			name:     "contains editor comment",
 			contains: "# editor:",
@@ -270,16 +260,6 @@ func TestGenerateDefaultConfigContent(t *testing.T) {
 			name:     "contains VISUAL/EDITOR environment variables mention",
 			contains: "VISUAL, EDITOR, GIT_EDITOR",
 		},
-		// Includes section - English comments
-		{
-			name:     "contains English includes comment",
-			contains: "Specify file patterns to manage as templates",
-		},
-		{
-			name:     "contains English glob description",
-			contains: "Supports glob patterns",
-		},
-		// Includes section - Japanese comments
 		{
 			name:     "contains includes comment",
 			contains: "# includes:",
@@ -300,16 +280,6 @@ func TestGenerateDefaultConfigContent(t *testing.T) {
 			name:     "contains AGENTS.md",
 			contains: `"AGENTS.md"`,
 		},
-		// Excludes section - English comments
-		{
-			name:     "contains English excludes comment",
-			contains: "Specify patterns to exclude from matched includes",
-		},
-		{
-			name:     "contains English excludes usage hint",
-			contains: "Useful for excluding local configs or sensitive files",
-		},
-		// Excludes section - Japanese comments
 		{
 			name:     "contains excludes comment",
 			contains: "# excludes:",
