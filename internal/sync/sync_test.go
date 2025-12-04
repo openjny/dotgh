@@ -19,9 +19,9 @@ func TestNewManager(t *testing.T) {
 
 func TestSyncDirPath(t *testing.T) {
 	t.Run("returns sync directory path", func(t *testing.T) {
-		configDir := "/home/user/.config/dotgh"
-		m := NewManager(configDir)
-		expected := "/home/user/.config/dotgh/.sync"
+		tmpDir := t.TempDir()
+		m := NewManager(tmpDir)
+		expected := filepath.Join(tmpDir, ".sync")
 		assert.Equal(t, expected, m.SyncDirPath())
 	})
 }

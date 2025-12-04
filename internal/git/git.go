@@ -176,6 +176,40 @@ func (c *Client) CheckoutBranch(branch string, create bool) error {
 	return c.run("checkout", branch)
 }
 
+// ConfigSet sets a git configuration value.
+func (c *Client) ConfigSet(key, value string) error {
+return c.run("config", key, value)
+}
+
+// ConfigGet gets a git configuration value.
+func (c *Client) ConfigGet(key string) (string, error) {
+output, err := c.runOutput("config", key)
+if err != nil {
+return "", err
+}
+return strings.TrimSpace(output), nil
+}
+
+// EnsureUserConfig ensures user.email and user.name are configured.
+// This is needed for git commit to work in environments without global config.
+func (c *Client) EnsureUserConfig() error {
+// Check if user.email is set
+if _, err := c.ConfigGet("user.email"); err != nil {
+if err := c.ConfigSet("user.email", "dotgh@local"); err != nil {
+return fmt.Errorf("set user.email: %w", err)
+}
+}
+
+// Check if user.name is set
+if _, err := c.ConfigGet("user.name"); err != nil {
+if err := c.ConfigSet("user.name", "dotgh"); err != nil {
+return fmt.Errorf("set user.name: %w", err)
+}
+}
+
+return nil
+}
+
 // Fetch fetches changes from remote.
 func (c *Client) Fetch() error {
 	return c.run("fetch")

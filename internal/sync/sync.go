@@ -85,6 +85,11 @@ func (m *Manager) Initialize(repoURL, branch string) error {
 			return fmt.Errorf("init git repo: %w", initErr)
 		}
 
+		// Ensure user config is set for commit
+		if configErr := m.git.EnsureUserConfig(); configErr != nil {
+			return fmt.Errorf("ensure git config: %w", configErr)
+		}
+
 		// Add remote
 		if remoteErr := m.git.RemoteAdd("origin", repoURL); remoteErr != nil {
 			return fmt.Errorf("add remote: %w", remoteErr)
