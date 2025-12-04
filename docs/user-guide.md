@@ -560,25 +560,6 @@ dotgh sync push -m "Updated templates"
 dotgh sync pull
 ```
 
-### Sync Configuration
-
-The following configuration options are **planned for future releases** and are not yet implemented:
-
-```yaml
-# sync: Configuration for syncing settings across machines (PLANNED)
-# These options are not yet functional - use command-line arguments instead.
-# sync:
-#   repo: "git@github.com:username/dotgh-sync.git"  # Default repository
-#   branch: "main"                                   # Default branch
-#   auto_commit: true                                # Auto-commit on push
-```
-
-Currently, use command-line arguments to specify the repository and branch:
-
-```bash
-dotgh sync init git@github.com:user/dotgh-sync.git --branch main
-```
-
 ### Security Considerations
 
 > ⚠️ **Warning:** Be careful about what you sync. The sync feature will upload your configuration and templates to a Git repository.
