@@ -492,7 +492,7 @@ dotgh sync push -m "Update templates for new project"
 ```
 
 **Options:**
-- `-m, --message`: Custom commit message
+- `-m, --message`: Custom commit message (default: `Sync update: YYYY-MM-DD HH:MM:SS`)
 
 #### `dotgh sync pull`
 
