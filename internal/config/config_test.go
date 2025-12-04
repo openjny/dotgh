@@ -546,13 +546,13 @@ func TestExpandTilde(t *testing.T) {
 
 func TestLoadFromDirWithTemplatesDir(t *testing.T) {
 	tests := []struct {
-		name            string
-		configYAML      string
+		name             string
+		configYAML       string
 		wantTemplatesDir string
 	}{
 		{
-			name:            "no templates_dir field",
-			configYAML:      "includes: []\n",
+			name:             "no templates_dir field",
+			configYAML:       "includes: []\n",
 			wantTemplatesDir: "",
 		},
 		{
