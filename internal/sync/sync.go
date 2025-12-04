@@ -2,6 +2,7 @@
 package sync
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -73,7 +74,13 @@ func (m *Manager) Initialize(repoURL, branch string) error {
 	// Try to clone the repository
 	err := m.git.Clone(repoURL, branch)
 	if err != nil {
-		// If clone fails (empty repo), initialize a new repo
+		// Only initialize new repo if the remote is empty
+		// For other errors (auth, network, etc.), propagate them
+		if !errors.Is(err, git.ErrEmptyRepository) {
+			return fmt.Errorf("clone repository: %w", err)
+		}
+
+		// If clone fails due to empty repo, initialize a new repo
 		if initErr := m.git.Init(); initErr != nil {
 			return fmt.Errorf("init git repo: %w", initErr)
 		}

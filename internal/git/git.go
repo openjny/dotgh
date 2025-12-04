@@ -2,12 +2,16 @@
 package git
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 )
+
+// ErrEmptyRepository indicates that the remote repository is empty (has no commits).
+var ErrEmptyRepository = errors.New("remote repository is empty")
 
 // Client represents a Git client for a specific directory.
 type Client struct {
@@ -51,6 +55,7 @@ func (c *Client) Init() error {
 }
 
 // Clone clones a repository to the client's directory.
+// Returns ErrEmptyRepository if the remote repository is empty.
 func (c *Client) Clone(repo, branch string) error {
 	// Clone into current directory
 	args := []string{"clone"}
@@ -58,7 +63,23 @@ func (c *Client) Clone(repo, branch string) error {
 		args = append(args, "-b", branch)
 	}
 	args = append(args, repo, ".")
-	return c.run(args...)
+
+	cmd := exec.Command("git", args...)
+	cmd.Dir = c.dir
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		outputStr := string(output)
+		// Check if the error is due to an empty repository
+		// Git outputs specific messages for empty repos
+		if strings.Contains(outputStr, "empty") ||
+			strings.Contains(outputStr, "You appear to have cloned an empty repository") ||
+			strings.Contains(outputStr, "warning: remote HEAD refers to nonexistent ref") ||
+			(strings.Contains(outputStr, "Remote branch") && strings.Contains(outputStr, "not found")) {
+			return ErrEmptyRepository
+		}
+		return fmt.Errorf("git clone: %s", strings.TrimSpace(outputStr))
+	}
+	return nil
 }
 
 // Add stages files for commit.
