@@ -176,6 +176,11 @@ func (c *Client) CheckoutBranch(branch string, create bool) error {
 	return c.run("checkout", branch)
 }
 
+// BranchRename renames the current branch to the specified name.
+func (c *Client) BranchRename(newName string) error {
+return c.run("branch", "-M", newName)
+}
+
 // ConfigSet sets a git configuration value.
 func (c *Client) ConfigSet(key, value string) error {
 return c.run("config", key, value)

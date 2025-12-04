@@ -110,10 +110,17 @@ func (m *Manager) Initialize(repoURL, branch string) error {
 			return fmt.Errorf("initial commit: %w", commitErr)
 		}
 
-		// Create branch if not main/master
-		if branch != "" && branch != "main" && branch != "master" {
-			if branchErr := m.git.CheckoutBranch(branch, true); branchErr != nil {
-				return fmt.Errorf("create branch: %w", branchErr)
+		// Ensure we're on the correct branch
+		// git init may create a different default branch depending on git version/config
+		currentBranch, _ := m.git.GetCurrentBranch()
+		targetBranch := branch
+		if targetBranch == "" {
+			targetBranch = "main"
+		}
+		if currentBranch != targetBranch {
+			// Rename the current branch to the target branch
+			if renameErr := m.git.BranchRename(targetBranch); renameErr != nil {
+				return fmt.Errorf("rename branch to %s: %w", targetBranch, renameErr)
 			}
 		}
 	}
