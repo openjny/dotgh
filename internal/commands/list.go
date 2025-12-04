@@ -3,37 +3,16 @@ package commands
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
+	"github.com/openjny/dotgh/internal/config"
 	"github.com/spf13/cobra"
 )
-
-// templatesDir is the path to the templates directory.
-// It can be overridden for testing purposes.
-var templatesDir string
 
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "Display a list of available templates",
 	Long:  `Display a list of available templates stored in the configuration directory.`,
 	RunE:  runList,
-}
-
-func init() {
-	// Set the default templates directory
-	templatesDir = getDefaultTemplatesDir()
-}
-
-// getDefaultTemplatesDir returns the default templates directory path.
-// It follows the XDG Base Directory Specification using os.UserConfigDir().
-func getDefaultTemplatesDir() string {
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		// Fallback to home directory
-		home, _ := os.UserHomeDir()
-		configDir = filepath.Join(home, ".config")
-	}
-	return filepath.Join(configDir, "dotgh", "templates")
 }
 
 // NewListCmd creates a new list command with a custom templates directory.
@@ -51,7 +30,12 @@ func NewListCmd(customTemplatesDir string) *cobra.Command {
 }
 
 func runList(cmd *cobra.Command, args []string) error {
-	return listTemplates(cmd, templatesDir)
+	// Load config to get templates directory
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+	return listTemplates(cmd, cfg.GetTemplatesDir())
 }
 
 // listTemplates scans the templates directory and displays available templates.

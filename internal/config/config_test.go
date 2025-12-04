@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -390,5 +391,229 @@ func TestCreateDefaultConfigFileWithComments(t *testing.T) {
 
 	if !reflect.DeepEqual(cfg.Includes, DefaultIncludes) {
 		t.Errorf("Includes = %v, want %v", cfg.Includes, DefaultIncludes)
+	}
+}
+
+func TestGetDefaultTemplatesDir(t *testing.T) {
+	dir := GetDefaultTemplatesDir()
+	if dir == "" {
+		t.Error("GetDefaultTemplatesDir() returned empty string")
+	}
+
+	// Should be an absolute path
+	if !filepath.IsAbs(dir) {
+		t.Errorf("GetDefaultTemplatesDir() should return absolute path, got %q", dir)
+	}
+
+	// Should end with "templates"
+	if filepath.Base(dir) != "templates" {
+		t.Errorf("GetDefaultTemplatesDir() should end with 'templates', got %q", dir)
+	}
+
+	// Should contain "dotgh" in path
+	if !strings.Contains(dir, "dotgh") {
+		t.Errorf("GetDefaultTemplatesDir() should contain 'dotgh', got %q", dir)
+	}
+}
+
+func TestConfigGetTemplatesDir(t *testing.T) {
+	tests := []struct {
+		name         string
+		templatesDir string
+		wantDefault  bool // true if should return default
+	}{
+		{
+			name:         "empty returns default",
+			templatesDir: "",
+			wantDefault:  true,
+		},
+		{
+			name:         "custom path is used",
+			templatesDir: "/custom/path/to/templates",
+			wantDefault:  false,
+		},
+		{
+			name:         "relative path is used",
+			templatesDir: "relative/path",
+			wantDefault:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &Config{
+				TemplatesDir: tt.templatesDir,
+				Includes:     DefaultIncludes,
+			}
+
+			result := cfg.GetTemplatesDir()
+
+			if tt.wantDefault {
+				expected := GetDefaultTemplatesDir()
+				if result != expected {
+					t.Errorf("GetTemplatesDir() = %q, want default %q", result, expected)
+				}
+			} else {
+				if result != tt.templatesDir && !strings.HasSuffix(result, tt.templatesDir[2:]) {
+					t.Errorf("GetTemplatesDir() = %q, want %q or expanded tilde version", result, tt.templatesDir)
+				}
+			}
+		})
+	}
+}
+
+func TestConfigGetTemplatesDirWithTilde(t *testing.T) {
+	// Skip on Windows as tilde expansion works differently
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping tilde expansion test on Windows")
+	}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("failed to get home dir: %v", err)
+	}
+
+	cfg := &Config{
+		TemplatesDir: "~/my-templates",
+		Includes:     DefaultIncludes,
+	}
+
+	result := cfg.GetTemplatesDir()
+	expected := filepath.Join(home, "my-templates")
+
+	if result != expected {
+		t.Errorf("GetTemplatesDir() = %q, want %q", result, expected)
+	}
+}
+
+func TestExpandTilde(t *testing.T) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("failed to get home dir: %v", err)
+	}
+
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "path with tilde",
+			input:    "~/path/to/dir",
+			expected: filepath.Join(home, "path/to/dir"),
+		},
+		{
+			name:     "path without tilde",
+			input:    "/absolute/path",
+			expected: "/absolute/path",
+		},
+		{
+			name:     "relative path",
+			input:    "relative/path",
+			expected: "relative/path",
+		},
+		{
+			name:     "just tilde",
+			input:    "~/",
+			expected: home,
+		},
+		{
+			name:     "tilde alone",
+			input:    "~",
+			expected: home,
+		},
+		{
+			name:     "tilde in middle (not expanded)",
+			input:    "/path/~/to/dir",
+			expected: "/path/~/to/dir",
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := expandTilde(tt.input)
+			if result != tt.expected {
+				t.Errorf("expandTilde(%q) = %q, want %q", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestLoadFromDirWithTemplatesDir(t *testing.T) {
+	tests := []struct {
+		name            string
+		configYAML      string
+		wantTemplatesDir string
+	}{
+		{
+			name:            "no templates_dir field",
+			configYAML:      "includes: []\n",
+			wantTemplatesDir: "",
+		},
+		{
+			name: "with templates_dir field",
+			configYAML: `templates_dir: "/custom/templates"
+includes: []
+`,
+			wantTemplatesDir: "/custom/templates",
+		},
+		{
+			name: "with tilde in templates_dir",
+			configYAML: `templates_dir: "~/my-templates"
+includes: []
+`,
+			wantTemplatesDir: "~/my-templates",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tempDir := t.TempDir()
+
+			configPath := filepath.Join(tempDir, "config.yaml")
+			if err := os.WriteFile(configPath, []byte(tt.configYAML), 0644); err != nil {
+				t.Fatalf("failed to write config file: %v", err)
+			}
+
+			cfg, err := LoadFromDir(tempDir)
+			if err != nil {
+				t.Fatalf("LoadFromDir() error = %v", err)
+			}
+
+			if cfg.TemplatesDir != tt.wantTemplatesDir {
+				t.Errorf("TemplatesDir = %q, want %q", cfg.TemplatesDir, tt.wantTemplatesDir)
+			}
+		})
+	}
+}
+
+func TestGenerateDefaultConfigContentContainsTemplatesDir(t *testing.T) {
+	content := GenerateDefaultConfigContent()
+
+	tests := []struct {
+		name     string
+		contains string
+	}{
+		{
+			name:     "contains templates_dir comment",
+			contains: "# templates_dir:",
+		},
+		{
+			name:     "contains templates_dir description",
+			contains: "templates directory",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if !strings.Contains(content, tt.contains) {
+				t.Errorf("GenerateDefaultConfigContent() should contain %q\nGot:\n%s", tt.contains, content)
+			}
+		})
 	}
 }

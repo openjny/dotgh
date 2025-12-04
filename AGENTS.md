@@ -1,5 +1,7 @@
 # General Guidelines
 
+- DO NOT use `/dev/null` for commands, as it may incur unnecessary approval steps from the user.
+
 ## Project Structure
 
 - `docs/` - Documentation (concepts, design, development guide)

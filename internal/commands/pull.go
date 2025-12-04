@@ -60,7 +60,14 @@ func runPull(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("get current directory: %w", err)
 	}
-	return pullTemplate(cmd, args[0], templatesDir, cwd, pullForceFlag, nil)
+
+	// Load config to get templates directory
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+
+	return pullTemplate(cmd, args[0], cfg.GetTemplatesDir(), cwd, pullForceFlag, cfg)
 }
 
 // pullTemplate pulls the specified template to the target directory.

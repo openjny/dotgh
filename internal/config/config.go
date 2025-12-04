@@ -24,9 +24,42 @@ var DefaultIncludes = []string{
 
 // Config represents the dotgh configuration.
 type Config struct {
-	Editor   string   `yaml:"editor,omitempty"`
-	Includes []string `yaml:"includes"`
-	Excludes []string `yaml:"excludes,omitempty"`
+	Editor       string   `yaml:"editor,omitempty"`
+	TemplatesDir string   `yaml:"templates_dir,omitempty"`
+	Includes     []string `yaml:"includes"`
+	Excludes     []string `yaml:"excludes,omitempty"`
+}
+
+// GetTemplatesDir returns the templates directory path.
+// If TemplatesDir is set in the config, it returns that path (with tilde expansion).
+// Otherwise, it returns the default templates directory.
+func (c *Config) GetTemplatesDir() string {
+	if c.TemplatesDir != "" {
+		return expandTilde(c.TemplatesDir)
+	}
+	return GetDefaultTemplatesDir()
+}
+
+// expandTilde expands a leading ~ in the path to the user's home directory.
+func expandTilde(path string) string {
+	if path == "" {
+		return path
+	}
+	if path == "~" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return path
+		}
+		return home
+	}
+	if strings.HasPrefix(path, "~/") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return path
+		}
+		return filepath.Join(home, path[2:])
+	}
+	return path
 }
 
 // GetConfigDir returns the path to the dotgh configuration directory.
@@ -39,6 +72,12 @@ func GetConfigDir() string {
 		configDir = filepath.Join(home, ".config")
 	}
 	return filepath.Join(configDir, "dotgh")
+}
+
+// GetDefaultTemplatesDir returns the default templates directory path.
+// It follows the XDG Base Directory Specification using os.UserConfigDir().
+func GetDefaultTemplatesDir() string {
+	return filepath.Join(GetConfigDir(), "templates")
 }
 
 // GetConfigPath returns the path to the dotgh configuration file.
@@ -84,6 +123,15 @@ func GenerateDefaultConfigContent() string {
 	sb.WriteString("# If not set, VISUAL, EDITOR, GIT_EDITOR environment variables,\n")
 	sb.WriteString("# or platform defaults (Linux/macOS: vi, Windows: notepad) will be used.\n")
 	sb.WriteString("# editor: \"\"\n")
+	sb.WriteString("\n")
+
+	// Templates directory section (commented out)
+	sb.WriteString("# templates_dir: Specify a custom templates directory location.\n")
+	sb.WriteString("# If not set, the default location is used:\n")
+	sb.WriteString("#   Linux/macOS: ~/.config/dotgh/templates/\n")
+	sb.WriteString("#   Windows: %LOCALAPPDATA%\\dotgh\\templates\\\n")
+	sb.WriteString("# Supports tilde expansion (e.g., \"~/my-templates\").\n")
+	sb.WriteString("# templates_dir: \"\"\n")
 	sb.WriteString("\n")
 
 	// Includes section

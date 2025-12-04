@@ -59,7 +59,14 @@ func runPush(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("get current directory: %w", err)
 	}
-	return pushTemplate(cmd, args[0], templatesDir, cwd, pushForceFlag, nil)
+
+	// Load config to get templates directory
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+
+	return pushTemplate(cmd, args[0], cfg.GetTemplatesDir(), cwd, pushForceFlag, cfg)
 }
 
 // pushTemplate saves the current directory's target files to a template.
