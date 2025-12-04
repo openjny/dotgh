@@ -88,25 +88,77 @@ dotgh list
 
 ### `dotgh pull <template>`
 
-Pull a template to the current directory. This copies the `.github` directory from the template.
+Pull a template to the current directory with Git-style sync behavior.
+
+By default, performs a **full sync**:
+- Adds new files from the template
+- Updates modified files
+- Deletes files that exist locally but not in the template
 
 ```bash
+# Full sync with confirmation prompt
 dotgh pull my-template
 
-# Force overwrite existing files
-dotgh pull my-template -f
+# Full sync without confirmation
+dotgh pull my-template --yes
+
+# Merge mode: only add/update, no deletions
+dotgh pull my-template --merge
 ```
+
+**Options:**
+- `-m, --merge`: Only add and update files, don't delete local-only files
+- `-y, --yes`: Skip the confirmation prompt
 
 ### `dotgh push <template>`
 
-Save the current directory's `.github` as a template.
+Save the current directory's settings as a template with Git-style sync behavior.
+
+By default, performs a **full sync**:
+- Adds new files to the template
+- Updates modified files in the template
+- Deletes files in the template that don't exist locally
+
+If the template doesn't exist, it will be created.
 
 ```bash
+# Full sync with confirmation prompt
 dotgh push my-template
 
-# Force overwrite existing template
-dotgh push my-template -f
+# Full sync without confirmation
+dotgh push my-template --yes
+
+# Merge mode: only add/update, no deletions
+dotgh push my-template --merge
 ```
+
+**Options:**
+- `-m, --merge`: Only add and update files, don't delete files from the template
+- `-y, --yes`: Skip the confirmation prompt
+
+### `dotgh diff <template>`
+
+Show differences between a template and the current directory without applying changes.
+
+```bash
+# Show what pull would do (template → current)
+dotgh diff my-template
+
+# Show what push would do (current → template)
+dotgh diff my-template --reverse
+
+# Show merge mode differences (no deletions)
+dotgh diff my-template --merge
+```
+
+**Options:**
+- `-r, --reverse`: Show differences for push direction (current → template)
+- `--merge`: Show merge mode differences (no deletions)
+
+**Output symbols:**
+- `+ file`: File will be added
+- `M file`: File will be modified
+- `- file`: File will be deleted
 
 ### `dotgh delete <template>`
 
@@ -129,9 +181,19 @@ dotgh edit
 
 # Open a specific template
 dotgh edit my-template
+
+# Create and open a new template
+dotgh edit new-template --create
 ```
 
 When called without arguments, opens the templates directory (`~/.config/dotgh/templates/`) in the editor. When a template name is provided, opens that specific template directory.
+
+If the template doesn't exist:
+- With `--create` flag: Creates the template directory automatically
+- Without flag: Prompts you to create it
+
+**Options:**
+- `-c, --create`: Create the template if it doesn't exist
 
 ### `dotgh version`
 

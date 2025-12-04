@@ -53,12 +53,32 @@ See [User Guide](docs/user-guide.md#installation) for more installation options.
 
 ```bash
 dotgh list                  # List templates
-dotgh pull <template>       # Get a template
-dotgh push <template>       # Save as a template
+dotgh pull <template>       # Sync template to current directory
+dotgh push <template>       # Sync current directory to template
+dotgh diff <template>       # Show differences before syncing
+dotgh edit <template>       # Edit a template
 dotgh delete <template>     # Delete a template
 dotgh config show           # Show current configuration
 dotgh config edit           # Edit configuration file
 dotgh update                # Update dotgh to latest version
+```
+
+### Git-style Sync
+
+`pull` and `push` use Git-style sync behavior:
+
+```bash
+# Full sync: adds, updates, and deletes files to match exactly
+dotgh pull my-template
+
+# Preview changes before applying
+dotgh diff my-template
+
+# Merge mode: only add/update, no deletions
+dotgh pull my-template --merge
+
+# Skip confirmation prompt
+dotgh pull my-template --yes
 ```
 
 See [User Guide](docs/user-guide.md#commands) for detailed command usage.
