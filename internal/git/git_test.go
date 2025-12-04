@@ -123,9 +123,9 @@ func TestPushAndPull(t *testing.T) {
 	}
 
 	t.Run("pushes and pulls changes", func(t *testing.T) {
-		// Create bare repo as remote
+		// Create bare repo as remote with explicit branch
 		bareDir := t.TempDir()
-		cmd := exec.Command("git", "init", "--bare")
+		cmd := exec.Command("git", "init", "--bare", "--initial-branch=main")
 		cmd.Dir = bareDir
 		require.NoError(t, cmd.Run())
 

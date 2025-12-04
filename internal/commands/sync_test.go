@@ -37,9 +37,9 @@ func TestSyncInitCommand(t *testing.T) {
 	}
 
 	t.Run("initializes sync with new repo", func(t *testing.T) {
-		// Create a bare git repo as remote
+		// Create a bare git repo as remote with explicit branch
 		bareDir := t.TempDir()
-		bareCmd := exec.Command("git", "init", "--bare")
+		bareCmd := exec.Command("git", "init", "--bare", "--initial-branch=main")
 		bareCmd.Dir = bareDir
 		require.NoError(t, bareCmd.Run())
 
@@ -50,7 +50,7 @@ func TestSyncInitCommand(t *testing.T) {
 		cmd := NewSyncInitCmd(configDir)
 		var buf bytes.Buffer
 		cmd.SetOut(&buf)
-		cmd.SetArgs([]string{bareDir})
+		cmd.SetArgs([]string{bareDir, "-b", "main"})
 
 		err := cmd.Execute()
 		require.NoError(t, err)
@@ -151,9 +151,9 @@ func TestSyncPushCommand(t *testing.T) {
 	}
 
 	t.Run("pushes config and templates", func(t *testing.T) {
-		// Create bare repo as remote
+		// Create bare repo as remote with explicit branch
 		bareDir := t.TempDir()
-		bareCmd := exec.Command("git", "init", "--bare")
+		bareCmd := exec.Command("git", "init", "--bare", "--initial-branch=main")
 		bareCmd.Dir = bareDir
 		require.NoError(t, bareCmd.Run())
 
@@ -167,7 +167,7 @@ func TestSyncPushCommand(t *testing.T) {
 
 		// Initialize sync
 		initCmd := NewSyncInitCmd(configDir)
-		initCmd.SetArgs([]string{bareDir})
+		initCmd.SetArgs([]string{bareDir, "-b", "main"})
 		var initBuf bytes.Buffer
 		initCmd.SetOut(&initBuf)
 		require.NoError(t, initCmd.Execute())
@@ -212,9 +212,9 @@ func TestSyncPullCommand(t *testing.T) {
 	}
 
 	t.Run("pulls config and templates", func(t *testing.T) {
-		// Create bare repo as remote
+		// Create bare repo as remote with explicit branch
 		bareDir := t.TempDir()
-		bareCmd := exec.Command("git", "init", "--bare")
+		bareCmd := exec.Command("git", "init", "--bare", "--initial-branch=main")
 		bareCmd.Dir = bareDir
 		require.NoError(t, bareCmd.Run())
 
@@ -228,7 +228,7 @@ func TestSyncPullCommand(t *testing.T) {
 
 		// Initialize sync on configDir1
 		initCmd := NewSyncInitCmd(configDir1)
-		initCmd.SetArgs([]string{bareDir})
+		initCmd.SetArgs([]string{bareDir, "-b", "main"})
 		var initBuf bytes.Buffer
 		initCmd.SetOut(&initBuf)
 		require.NoError(t, initCmd.Execute())
@@ -240,20 +240,30 @@ func TestSyncPullCommand(t *testing.T) {
 		pushCmd.SetArgs([]string{"-m", "initial sync"})
 		require.NoError(t, pushCmd.Execute())
 
-		// Create config dir 2 and initialize sync
+		// Verify push created files in sync directory
+		syncDir1 := filepath.Join(configDir1, ".sync")
+		_, err := os.Stat(filepath.Join(syncDir1, "config.yaml"))
+		require.NoError(t, err, "config.yaml should exist in sync directory after push")
+
+		// Create config dir 2 and initialize sync (clone from bare repo)
 		configDir2 := t.TempDir()
 		initCmd2 := NewSyncInitCmd(configDir2)
-		initCmd2.SetArgs([]string{bareDir})
+		initCmd2.SetArgs([]string{bareDir, "-b", "main"})
 		var initBuf2 bytes.Buffer
 		initCmd2.SetOut(&initBuf2)
 		require.NoError(t, initCmd2.Execute())
 
-		// Pull to configDir2
+		// Verify clone got the files in sync directory
+		syncDir2 := filepath.Join(configDir2, ".sync")
+		_, err = os.Stat(filepath.Join(syncDir2, "config.yaml"))
+		require.NoError(t, err, "config.yaml should exist in sync directory after clone")
+
+		// Pull to configDir2 (copy from sync to config dir)
 		pullCmd := NewSyncPullCmd(configDir2)
 		var buf bytes.Buffer
 		pullCmd.SetOut(&buf)
 
-		err := pullCmd.Execute()
+		err = pullCmd.Execute()
 		require.NoError(t, err)
 
 		output := buf.String()
