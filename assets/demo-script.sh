@@ -35,23 +35,30 @@ printf '\n'
 dotgh list
 prompt
 
-# 2. Pull a template
-type_slow "dotgh pull bicep-mslearn-mcp"
+# 2. Pull a template with --yes flag
+type_slow "dotgh pull bicep-mslearn-mcp --yes"
 sleep 0.3
 printf '\n'
-dotgh pull bicep-mslearn-mcp
+dotgh pull bicep-mslearn-mcp --yes
 prompt
 
-# 3. Show files created
+# 3. Show files created (updated directory structure)
 type_slow "ls -la"
 sleep 0.3
 printf '\n'
 echo 'total 16'
 echo 'drwxr-xr-x  3 user user 4096 Dec  1 12:00 .'
 echo 'drwxr-xr-x 10 user user 4096 Dec  1 12:00 ..'
-echo 'drwxr-xr-x  4 user user 4096 Dec  1 12:00 .github'
+echo 'drwxr-xr-x  5 user user 4096 Dec  1 12:00 .github'
 echo 'drwxr-xr-x  2 user user 4096 Dec  1 12:00 .vscode'
 echo '-rw-r--r--  1 user user  512 Dec  1 12:00 AGENTS.md'
+prompt
+
+# 4. Show diff status
+type_slow "dotgh diff bicep-mslearn-mcp"
+sleep 0.3
+printf '\n'
+dotgh diff bicep-mslearn-mcp
 
 # End with prompt visible for a moment
 printf '\n$ '
