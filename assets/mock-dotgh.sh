@@ -12,16 +12,21 @@ case "$1" in
     echo ""
     ;;
   "pull")
-    echo "Pulling template '$2'..."
-    echo "  ✓ AGENTS.md"
-    echo "  ✓ .github/copilot-instructions.md"
-    echo "  ✓ .github/instructions/bicep.instructions.md"
-    echo "  ✓ .github/prompts/spec.prompt.md"
-    echo "  ✓ .github/prompts/plan.prompt.md"
-    echo "  ✓ .github/prompts/refactor.prompt.md"
-    echo "  ✓ .vscode/mcp.json"
+    echo "Pulling template '$2' (full sync):"
+    echo "  + AGENTS.md"
+    echo "  + .github/instructions/bicep.instructions.md"
+    echo "  + .github/prompts/refactor.prompt.md"
+    echo "  + .github/agents/plan.agent.md"
+    echo "  + .github/agents/implement.agent.md"
+    echo "  + .vscode/mcp.json"
     echo ""
-    echo "Template applied successfully!"
+    echo "Done: 6 added"
+    echo ""
+    ;;
+  "diff")
+    echo "Comparing with template '$2':"
+    echo ""
+    echo "Local files are in sync with template."
     echo ""
     ;;
   *)

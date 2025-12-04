@@ -1,1 +1,4 @@
-mock-dotgh.sh
+#!/bin/bash
+# Wrapper script to call mock-dotgh.sh
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+exec "$SCRIPT_DIR/mock-dotgh.sh" "$@"
