@@ -562,14 +562,38 @@ dotgh sync pull
 
 ### Sync Configuration
 
-You can configure sync defaults in your `config.yaml`:
+The following configuration options are **planned for future releases** and are not yet implemented:
 
 ```yaml
-sync:
-  repo: "git@github.com:username/dotgh-sync.git"
-  branch: "main"
-  auto_commit: true
+# sync: Configuration for syncing settings across machines (PLANNED)
+# These options are not yet functional - use command-line arguments instead.
+# sync:
+#   repo: "git@github.com:username/dotgh-sync.git"  # Default repository
+#   branch: "main"                                   # Default branch
+#   auto_commit: true                                # Auto-commit on push
 ```
+
+Currently, use command-line arguments to specify the repository and branch:
+
+```bash
+dotgh sync init git@github.com:user/dotgh-sync.git --branch main
+```
+
+### Security Considerations
+
+> ⚠️ **Warning:** Be careful about what you sync. The sync feature will upload your configuration and templates to a Git repository.
+
+**Do NOT include in your templates:**
+- API keys or tokens
+- Passwords or secrets
+- Private SSH keys
+- Personal access tokens
+- Any sensitive credentials
+
+**Recommendations:**
+- Use the `excludes` pattern to exclude sensitive files
+- Use private repositories for sync
+- Review your templates before pushing
 
 ---
 

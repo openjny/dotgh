@@ -13,6 +13,15 @@ import (
 // ErrEmptyRepository indicates that the remote repository is empty (has no commits).
 var ErrEmptyRepository = errors.New("remote repository is empty")
 
+// ErrAuthenticationFailed indicates authentication failed (SSH key or token issue).
+var ErrAuthenticationFailed = errors.New("authentication failed")
+
+// ErrNetworkError indicates a network connectivity issue.
+var ErrNetworkError = errors.New("network error")
+
+// ErrMergeConflict indicates a merge conflict occurred.
+var ErrMergeConflict = errors.New("merge conflict")
+
 // Client represents a Git client for a specific directory.
 type Client struct {
 	dir string
@@ -94,8 +103,21 @@ func (c *Client) Commit(message string) error {
 }
 
 // Push pushes commits to the remote repository.
+// Returns ErrAuthenticationFailed for auth issues.
+// Returns ErrNetworkError for network issues.
 func (c *Client) Push() error {
-	return c.run("push")
+	err := c.runWithStderr("push")
+	if err != nil {
+		errStr := err.Error()
+		if isAuthError(errStr) {
+			return fmt.Errorf("%w: %s", ErrAuthenticationFailed, errStr)
+		}
+		if isNetworkError(errStr) {
+			return fmt.Errorf("%w: %s", ErrNetworkError, errStr)
+		}
+		return err
+	}
+	return nil
 }
 
 // PushWithUpstream pushes commits and sets upstream branch.
@@ -104,8 +126,26 @@ func (c *Client) PushWithUpstream(remote, branch string) error {
 }
 
 // Pull pulls changes from the remote repository.
+// Returns ErrMergeConflict if there are merge conflicts.
+// Returns ErrAuthenticationFailed for auth issues.
+// Returns ErrNetworkError for network issues.
 func (c *Client) Pull() error {
-	return c.run("pull")
+	err := c.runWithStderr("pull")
+	if err != nil {
+		errStr := err.Error()
+		// Check for specific error types
+		if isAuthError(errStr) {
+			return fmt.Errorf("%w: %s", ErrAuthenticationFailed, errStr)
+		}
+		if isNetworkError(errStr) {
+			return fmt.Errorf("%w: %s", ErrNetworkError, errStr)
+		}
+		if isMergeConflict(errStr) {
+			return fmt.Errorf("%w: %s", ErrMergeConflict, errStr)
+		}
+		return err
+	}
+	return nil
 }
 
 // RemoteAdd adds a remote repository.
@@ -178,41 +218,41 @@ func (c *Client) CheckoutBranch(branch string, create bool) error {
 
 // BranchRename renames the current branch to the specified name.
 func (c *Client) BranchRename(newName string) error {
-return c.run("branch", "-M", newName)
+	return c.run("branch", "-M", newName)
 }
 
 // ConfigSet sets a git configuration value.
 func (c *Client) ConfigSet(key, value string) error {
-return c.run("config", key, value)
+	return c.run("config", key, value)
 }
 
 // ConfigGet gets a git configuration value.
 func (c *Client) ConfigGet(key string) (string, error) {
-output, err := c.runOutput("config", key)
-if err != nil {
-return "", err
-}
-return strings.TrimSpace(output), nil
+	output, err := c.runOutput("config", key)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(output), nil
 }
 
 // EnsureUserConfig ensures user.email and user.name are configured.
 // This is needed for git commit to work in environments without global config.
 func (c *Client) EnsureUserConfig() error {
-// Check if user.email is set
-if _, err := c.ConfigGet("user.email"); err != nil {
-if err := c.ConfigSet("user.email", "dotgh@local"); err != nil {
-return fmt.Errorf("set user.email: %w", err)
-}
-}
+	// Check if user.email is set
+	if _, err := c.ConfigGet("user.email"); err != nil {
+		if err := c.ConfigSet("user.email", "dotgh@local"); err != nil {
+			return fmt.Errorf("set user.email: %w", err)
+		}
+	}
 
-// Check if user.name is set
-if _, err := c.ConfigGet("user.name"); err != nil {
-if err := c.ConfigSet("user.name", "dotgh"); err != nil {
-return fmt.Errorf("set user.name: %w", err)
-}
-}
+	// Check if user.name is set
+	if _, err := c.ConfigGet("user.name"); err != nil {
+		if err := c.ConfigSet("user.name", "dotgh"); err != nil {
+			return fmt.Errorf("set user.name: %w", err)
+		}
+	}
 
-return nil
+	return nil
 }
 
 // Fetch fetches changes from remote.
@@ -227,11 +267,49 @@ func (c *Client) GetDir() string {
 
 // run executes a git command in the client's directory.
 func (c *Client) run(args ...string) error {
+	return c.runWithStderr(args...)
+}
+
+// runWithStderr executes a git command and returns stderr in error message.
+func (c *Client) runWithStderr(args ...string) error {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = c.dir
-	cmd.Stdout = nil
-	cmd.Stderr = nil
-	return cmd.Run()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		if len(output) > 0 {
+			return fmt.Errorf("git %s: %s", strings.Join(args, " "), strings.TrimSpace(string(output)))
+		}
+		return fmt.Errorf("git %s: %w", strings.Join(args, " "), err)
+	}
+	return nil
+}
+
+// isAuthError checks if the error message indicates an authentication failure.
+func isAuthError(errStr string) bool {
+	lower := strings.ToLower(errStr)
+	return strings.Contains(lower, "authentication failed") ||
+		strings.Contains(lower, "permission denied") ||
+		strings.Contains(lower, "could not read from remote repository") ||
+		strings.Contains(lower, "invalid username or password") ||
+		strings.Contains(lower, "fatal: could not read password")
+}
+
+// isNetworkError checks if the error message indicates a network issue.
+func isNetworkError(errStr string) bool {
+	lower := strings.ToLower(errStr)
+	return strings.Contains(lower, "could not resolve host") ||
+		strings.Contains(lower, "unable to access") ||
+		strings.Contains(lower, "connection refused") ||
+		strings.Contains(lower, "network is unreachable") ||
+		strings.Contains(lower, "connection timed out")
+}
+
+// isMergeConflict checks if the error message indicates a merge conflict.
+func isMergeConflict(errStr string) bool {
+	lower := strings.ToLower(errStr)
+	return strings.Contains(lower, "conflict") ||
+		strings.Contains(lower, "merge failed") ||
+		strings.Contains(lower, "automatic merge failed")
 }
 
 // runOutput executes a git command and returns its output.

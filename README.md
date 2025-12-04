@@ -60,6 +60,10 @@ dotgh edit <template>       # Edit a template
 dotgh delete <template>     # Delete a template
 dotgh config show           # Show current configuration
 dotgh config edit           # Edit configuration file
+dotgh sync init <repo>      # Initialize sync with a Git repository
+dotgh sync push             # Push config/templates to remote
+dotgh sync pull             # Pull config/templates from remote
+dotgh sync status           # Show sync status
 dotgh update                # Update dotgh to latest version
 ```
 

@@ -1,6 +1,7 @@
 package git
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -378,5 +379,119 @@ func TestCheckout(t *testing.T) {
 		branch, err := client.GetCurrentBranch()
 		require.NoError(t, err)
 		assert.Equal(t, "test-branch", branch)
+	})
+}
+
+func TestSentinelErrors(t *testing.T) {
+	t.Run("error types are distinct", func(t *testing.T) {
+		assert.False(t, errors.Is(ErrNetworkError, ErrMergeConflict))
+	})
+
+	t.Run("ErrNetworkError has correct message", func(t *testing.T) {
+		assert.Equal(t, "network error", ErrNetworkError.Error())
+	})
+
+	t.Run("ErrMergeConflict has correct message", func(t *testing.T) {
+		assert.Equal(t, "merge conflict", ErrMergeConflict.Error())
+	})
+}
+
+func TestCloneError(t *testing.T) {
+	t.Run("returns error for invalid repository URL", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		client := New(tmpDir)
+
+		err := client.Clone("https://invalid-url-that-does-not-exist-12345.example.com/repo.git", "")
+		assert.Error(t, err)
+	})
+
+	t.Run("returns error for non-existent local path", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		client := New(tmpDir)
+
+		err := client.Clone("/non/existent/path/to/repo", "")
+		assert.Error(t, err)
+	})
+}
+
+func TestPushError(t *testing.T) {
+	t.Run("returns error when no remote configured", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		cmd := exec.Command("git", "init")
+		cmd.Dir = tmpDir
+		require.NoError(t, cmd.Run())
+
+		cmd = exec.Command("git", "config", "user.email", "test@test.com")
+		cmd.Dir = tmpDir
+		require.NoError(t, cmd.Run())
+
+		cmd = exec.Command("git", "config", "user.name", "Test")
+		cmd.Dir = tmpDir
+		require.NoError(t, cmd.Run())
+
+		testFile := filepath.Join(tmpDir, "test.txt")
+		require.NoError(t, os.WriteFile(testFile, []byte("hello"), 0644))
+
+		cmd = exec.Command("git", "add", ".")
+		cmd.Dir = tmpDir
+		require.NoError(t, cmd.Run())
+
+		cmd = exec.Command("git", "commit", "-m", "initial")
+		cmd.Dir = tmpDir
+		require.NoError(t, cmd.Run())
+
+		client := New(tmpDir)
+		err := client.Push()
+		assert.Error(t, err)
+	})
+}
+
+func TestPullError(t *testing.T) {
+	t.Run("returns error when no remote configured", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		cmd := exec.Command("git", "init")
+		cmd.Dir = tmpDir
+		require.NoError(t, cmd.Run())
+
+		client := New(tmpDir)
+		err := client.Pull()
+		assert.Error(t, err)
+	})
+}
+
+func TestCommitError(t *testing.T) {
+	t.Run("returns error when nothing to commit", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		cmd := exec.Command("git", "init")
+		cmd.Dir = tmpDir
+		require.NoError(t, cmd.Run())
+
+		cmd = exec.Command("git", "config", "user.email", "test@test.com")
+		cmd.Dir = tmpDir
+		require.NoError(t, cmd.Run())
+
+		cmd = exec.Command("git", "config", "user.name", "Test")
+		cmd.Dir = tmpDir
+		require.NoError(t, cmd.Run())
+
+		// Create initial commit first
+		testFile := filepath.Join(tmpDir, "test.txt")
+		require.NoError(t, os.WriteFile(testFile, []byte("hello"), 0644))
+
+		cmd = exec.Command("git", "add", ".")
+		cmd.Dir = tmpDir
+		require.NoError(t, cmd.Run())
+
+		cmd = exec.Command("git", "commit", "-m", "initial")
+		cmd.Dir = tmpDir
+		require.NoError(t, cmd.Run())
+
+		// Now try to commit with nothing staged
+		client := New(tmpDir)
+		err := client.Commit("empty commit")
+		assert.Error(t, err)
 	})
 }

@@ -159,11 +159,13 @@ func GenerateDefaultConfigContent() string {
 	sb.WriteString("#   - \".github/prompts/secret-*.prompt.md\"\n")
 	sb.WriteString("\n")
 
-	// Sync section (commented out)
+	// Sync section (commented out - not yet implemented)
 	sb.WriteString("# sync: Configuration for syncing settings across machines\n")
+	sb.WriteString("# NOTE: These options are PLANNED for future releases and not yet functional.\n")
+	sb.WriteString("# Currently, use command-line arguments instead (dotgh sync init <repo> --branch <branch>).\n")
 	sb.WriteString("# sync:\n")
-	sb.WriteString("#   repo: \"git@github.com:username/dotgh-sync.git\"  # Sync repository URL\n")
-	sb.WriteString("#   branch: \"main\"                                   # Branch to use\n")
+	sb.WriteString("#   repo: \"git@github.com:username/dotgh-sync.git\"  # Default repository\n")
+	sb.WriteString("#   branch: \"main\"                                   # Default branch\n")
 	sb.WriteString("#   auto_commit: true                                # Auto-commit on push\n")
 
 	return sb.String()
