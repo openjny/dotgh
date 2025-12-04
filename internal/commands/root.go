@@ -27,4 +27,5 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(updateCmd)
 	rootCmd.AddCommand(configCmd)
+	rootCmd.AddCommand(syncCmd)
 }

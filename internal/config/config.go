@@ -149,6 +149,7 @@ func GenerateDefaultConfigContent() string {
 	sb.WriteString("# excludes:\n")
 	sb.WriteString("#   - \".github/prompts/local.prompt.md\"\n")
 	sb.WriteString("#   - \".github/prompts/secret-*.prompt.md\"\n")
+	sb.WriteString("\n")
 
 	return sb.String()
 }
