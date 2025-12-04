@@ -28,8 +28,10 @@ dotgh/
 ├── internal/
 │   ├── commands/         # CLI subcommands
 │   ├── config/           # Configuration management
+│   ├── diff/             # File difference calculation
 │   ├── editor/           # Editor detection and launching
 │   ├── glob/             # Glob pattern matching
+│   ├── prompt/           # User confirmation prompts
 │   ├── updater/          # Self-update logic
 │   └── version/          # Version info (ldflags)
 ├── docs/                 # Documentation
@@ -44,18 +46,19 @@ dotgh [command] [flags]
 
 ### Command List
 
-| Command        | Arguments    | Options           | Description                                         | Status      |
-| -------------- | ------------ | ----------------- | --------------------------------------------------- | ----------- |
-| `list`         | None         | None              | Display a list of available templates               | Implemented |
-| `pull`         | `<template>` | `-f, --force`     | Pull a template to the current directory            | Implemented |
-| `push`         | `<template>` | `-f, --force`     | Save the current directory's settings as a template | Implemented |
-| `delete`       | `<template>` | `-f, --force`     | Delete a template                                   | Implemented |
-| `edit`         | `<template>` | None              | Open template in the user's preferred editor        | Implemented |
-| `update`       | None         | `-c, --check`     | Update dotgh itself to the latest version           | Implemented |
-| `version`      | None         | None              | Display version information                         | Implemented |
-| `config`       | None         | None              | Manage dotgh configuration (parent command)         | Implemented |
-| `config show`  | None         | None              | Display current configuration in YAML format        | Implemented |
-| `config edit`  | None         | None              | Open configuration file in the user's preferred editor | Implemented |
+| Command        | Arguments    | Options                 | Description                                         | Status      |
+| -------------- | ------------ | ----------------------- | --------------------------------------------------- | ----------- |
+| `list`         | None         | None                    | Display a list of available templates               | Implemented |
+| `pull`         | `<template>` | `-m, --merge`, `-y, --yes` | Pull a template to the current directory         | Implemented |
+| `push`         | `<template>` | `-m, --merge`, `-y, --yes` | Save the current directory's settings as a template | Implemented |
+| `diff`         | `<template>` | `-r, --reverse`, `--merge` | Show differences between template and current directory | Implemented |
+| `delete`       | `<template>` | `-f, --force`           | Delete a template                                   | Implemented |
+| `edit`         | `[template]` | `-c, --create`          | Open template in the user's preferred editor        | Implemented |
+| `update`       | None         | `-c, --check`           | Update dotgh itself to the latest version           | Implemented |
+| `version`      | None         | None                    | Display version information                         | Implemented |
+| `config`       | None         | None                    | Manage dotgh configuration (parent command)         | Implemented |
+| `config show`  | None         | None                    | Display current configuration in YAML format        | Implemented |
+| `config edit`  | None         | None                    | Open configuration file in the user's preferred editor | Implemented |
 
 ## Template Targets
 
@@ -113,5 +116,45 @@ For GUI editors (VS Code, Sublime Text), the `--wait` flag is automatically adde
 
 ## Command Behavior
 
-- **pull/push**: Use `-f` flag to overwrite existing files; without it, existing files are skipped.
-- **update**: Downloads from GitHub Releases with checksum validation; skips if running dev build.
+### pull/push (Git-style Sync)
+
+By default, `pull` and `push` perform a **full sync** with Git-style behavior:
+
+- **Adds** new files from source
+- **Updates** modified files (overwrites with source content)
+- **Deletes** files that exist in destination but not in source
+
+This ensures the destination matches the source exactly.
+
+**Flags:**
+- `-m, --merge`: Merge mode - only add and update files, no deletions
+- `-y, --yes`: Skip confirmation prompt
+
+**Examples:**
+```bash
+dotgh pull my-template          # Full sync with confirmation
+dotgh pull my-template --yes    # Full sync without confirmation
+dotgh pull my-template --merge  # Merge only (no deletions)
+```
+
+### diff
+
+Shows differences between a template and the current directory without applying changes.
+
+**Flags:**
+- `-r, --reverse`: Show differences for push direction (current → template)
+- `--merge`: Show merge mode differences (no deletions)
+
+**Exit codes:**
+- 0: No differences found
+- 1: Differences found or error occurred
+
+### edit
+
+Opens a template in the user's preferred editor. If the template doesn't exist:
+- With `--create` flag: Creates the template directory
+- Without flag: Prompts to create it
+
+### update
+
+Downloads from GitHub Releases with checksum validation; skips if running dev build.

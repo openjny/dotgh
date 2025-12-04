@@ -27,8 +27,8 @@ func TestPushThenListIntegration(t *testing.T) {
 	templatesDir := t.TempDir()
 	templateName := "integration-test-template"
 
-	// Step 1: Push the template
-	_, err := executePushCmd(t, templatesDir, sourceDir, templateName, false, nil)
+	// Step 1: Push the template (with --yes to skip confirmation)
+	_, err := executePushCmd(t, templatesDir, sourceDir, templateName, false, true, nil, "")
 	if err != nil {
 		t.Fatalf("push failed: %v", err)
 	}
@@ -67,15 +67,15 @@ func TestPushThenPullIntegration(t *testing.T) {
 	templatesDir := t.TempDir()
 	templateName := "full-workflow-template"
 
-	// Step 1: Push template from source directory
-	_, err := executePushCmd(t, templatesDir, sourceDir, templateName, false, nil)
+	// Step 1: Push template from source directory (with --yes to skip confirmation)
+	_, err := executePushCmd(t, templatesDir, sourceDir, templateName, false, true, nil, "")
 	if err != nil {
 		t.Fatalf("push failed: %v", err)
 	}
 
-	// Step 2: Pull template to a new target directory
+	// Step 2: Pull template to a new target directory (with --yes to skip confirmation)
 	targetDir := t.TempDir()
-	_, err = executePullCmd(t, templatesDir, targetDir, templateName, false, nil)
+	_, err = executePullCmd(t, templatesDir, targetDir, templateName, false, true, nil, "")
 	if err != nil {
 		t.Fatalf("pull failed: %v", err)
 	}
@@ -98,9 +98,9 @@ func TestPullThenDeleteIntegration(t *testing.T) {
 	})
 	templateName := "deletable-template"
 
-	// Step 1: Pull template to target directory
+	// Step 1: Pull template to target directory (with --yes to skip confirmation)
 	targetDir := t.TempDir()
-	_, err := executePullCmd(t, templatesDir, targetDir, templateName, false, nil)
+	_, err := executePullCmd(t, templatesDir, targetDir, templateName, false, true, nil, "")
 	if err != nil {
 		t.Fatalf("pull failed: %v", err)
 	}
@@ -128,74 +128,77 @@ func TestPullThenDeleteIntegration(t *testing.T) {
 	}
 }
 
-// TestForceOverwriteIntegration verifies the -f flag behavior across push and pull.
-func TestForceOverwriteIntegration(t *testing.T) {
+// TestMergeModeIntegration verifies the --merge flag behavior across push and pull.
+func TestMergeModeIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
 
 	templatesDir := t.TempDir()
-	templateName := "overwrite-test"
+	templateName := "merge-test"
 
 	// Step 1: Push initial version
 	sourceDir1 := setupTestSourceDir(t, map[string]string{
 		"AGENTS.md": "# Version 1",
 	})
-	_, err := executePushCmd(t, templatesDir, sourceDir1, templateName, false, nil)
+	_, err := executePushCmd(t, templatesDir, sourceDir1, templateName, false, true, nil, "")
 	if err != nil {
 		t.Fatalf("initial push failed: %v", err)
 	}
 
-	// Step 2: Push updated version without force (should skip)
+	// Step 2: Push updated version (should update)
 	sourceDir2 := setupTestSourceDir(t, map[string]string{
 		"AGENTS.md": "# Version 2",
 	})
-	output, err := executePushCmd(t, templatesDir, sourceDir2, templateName, false, nil)
+	output, err := executePushCmd(t, templatesDir, sourceDir2, templateName, false, true, nil, "")
 	if err != nil {
 		t.Fatalf("second push failed: %v", err)
 	}
-	if !strings.Contains(output, "skipped") {
-		t.Errorf("should skip existing file without force, got:\n%s", output)
-	}
-
-	// Verify still version 1
-	verifyFileContent(t, filepath.Join(templatesDir, templateName, "AGENTS.md"), "# Version 1")
-
-	// Step 3: Push with force (should overwrite)
-	_, err = executePushCmd(t, templatesDir, sourceDir2, templateName, true, nil)
-	if err != nil {
-		t.Fatalf("force push failed: %v", err)
+	if !strings.Contains(output, "M AGENTS.md") {
+		t.Errorf("should show modification, got:\n%s", output)
 	}
 
 	// Verify now version 2
 	verifyFileContent(t, filepath.Join(templatesDir, templateName, "AGENTS.md"), "# Version 2")
 
-	// Step 4: Pull to target directory
+	// Step 3: Pull to target directory with existing different file
 	targetDir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(targetDir, "AGENTS.md"), []byte("# Existing"), 0644); err != nil {
 		t.Fatal(err)
 	}
+	// Add a file that's only in target (will be deleted in full sync)
+	if err := os.MkdirAll(filepath.Join(targetDir, ".github"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(targetDir, ".github/copilot-instructions.md"), []byte("# Local only"), 0644); err != nil {
+		t.Fatal(err)
+	}
 
-	// Pull without force (should skip)
-	output, err = executePullCmd(t, templatesDir, targetDir, templateName, false, nil)
+	// Pull with merge mode (should NOT delete local-only file)
+	output, err = executePullCmd(t, templatesDir, targetDir, templateName, true, true, nil, "")
 	if err != nil {
-		t.Fatalf("pull without force failed: %v", err)
+		t.Fatalf("pull with merge failed: %v", err)
 	}
-	if !strings.Contains(output, "skipped") {
-		t.Errorf("should skip existing file without force, got:\n%s", output)
-	}
-
-	// Verify still existing content
-	verifyFileContent(t, filepath.Join(targetDir, "AGENTS.md"), "# Existing")
-
-	// Pull with force (should overwrite)
-	_, err = executePullCmd(t, templatesDir, targetDir, templateName, true, nil)
-	if err != nil {
-		t.Fatalf("pull with force failed: %v", err)
+	if strings.Contains(output, "- .github/copilot-instructions.md") {
+		t.Errorf("merge mode should NOT show deletion, got:\n%s", output)
 	}
 
-	// Verify now version 2
+	// Verify local-only file still exists
+	verifyFileContent(t, filepath.Join(targetDir, ".github/copilot-instructions.md"), "# Local only")
+
+	// Verify AGENTS.md was updated
 	verifyFileContent(t, filepath.Join(targetDir, "AGENTS.md"), "# Version 2")
+
+	// Pull without merge mode (full sync should delete local-only file)
+	_, err = executePullCmd(t, templatesDir, targetDir, templateName, false, true, nil, "")
+	if err != nil {
+		t.Fatalf("pull without merge failed: %v", err)
+	}
+
+	// Verify local-only file was deleted
+	if _, err := os.Stat(filepath.Join(targetDir, ".github/copilot-instructions.md")); !os.IsNotExist(err) {
+		t.Error("full sync should delete local-only file")
+	}
 }
 
 // TestMultipleTemplatesIntegration verifies managing multiple templates.
@@ -240,7 +243,7 @@ func TestMultipleTemplatesIntegration(t *testing.T) {
 	// Push all templates
 	for _, tmpl := range templates {
 		sourceDir := setupTestSourceDir(t, tmpl.files)
-		_, err := executePushCmd(t, templatesDir, sourceDir, tmpl.name, false, nil)
+		_, err := executePushCmd(t, templatesDir, sourceDir, tmpl.name, false, true, nil, "")
 		if err != nil {
 			t.Fatalf("push %s failed: %v", tmpl.name, err)
 		}
@@ -264,7 +267,7 @@ func TestMultipleTemplatesIntegration(t *testing.T) {
 	// Pull each template to separate directories and verify
 	for _, tmpl := range templates {
 		targetDir := t.TempDir()
-		_, err := executePullCmd(t, templatesDir, targetDir, tmpl.name, false, nil)
+		_, err := executePullCmd(t, templatesDir, targetDir, tmpl.name, false, true, nil, "")
 		if err != nil {
 			t.Fatalf("pull %s failed: %v", tmpl.name, err)
 		}
@@ -309,11 +312,11 @@ func TestFullWorkflowIntegration(t *testing.T) {
 	})
 
 	// 1. Push
-	pushOutput, err := executePushCmd(t, templatesDir, sourceDir, templateName, false, nil)
+	pushOutput, err := executePushCmd(t, templatesDir, sourceDir, templateName, false, true, nil, "")
 	if err != nil {
 		t.Fatalf("push failed: %v", err)
 	}
-	if !strings.Contains(pushOutput, "Pushing to template") {
+	if !strings.Contains(pushOutput, "Creating template") && !strings.Contains(pushOutput, "Pushing to template") {
 		t.Errorf("push output unexpected: %s", pushOutput)
 	}
 
@@ -328,7 +331,7 @@ func TestFullWorkflowIntegration(t *testing.T) {
 
 	// 3. Pull
 	targetDir := t.TempDir()
-	pullOutput, err := executePullCmd(t, templatesDir, targetDir, templateName, false, nil)
+	pullOutput, err := executePullCmd(t, templatesDir, targetDir, templateName, false, true, nil, "")
 	if err != nil {
 		t.Fatalf("pull failed: %v", err)
 	}
@@ -428,7 +431,7 @@ func TestPushThenEditIntegration(t *testing.T) {
 	templateName := "editable-template"
 
 	// Step 1: Push the template
-	_, err := executePushCmd(t, templatesDir, sourceDir, templateName, false, nil)
+	_, err := executePushCmd(t, templatesDir, sourceDir, templateName, false, true, nil, "")
 	if err != nil {
 		t.Fatalf("push failed: %v", err)
 	}

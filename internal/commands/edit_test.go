@@ -53,7 +53,11 @@ func TestEditCmdTemplateNotFound(t *testing.T) {
 	templatesDir := t.TempDir()
 	configDir := t.TempDir()
 
-	cmd := NewEditCmd(templatesDir, configDir)
+	// Simulate user typing "n" to decline creation
+	opts := &EditOptions{
+		Stdin: strings.NewReader("n\n"),
+	}
+	cmd := NewEditCmdWithOptions(templatesDir, configDir, opts)
 	cmd.SetArgs([]string{"non-existent-template"})
 
 	var buf bytes.Buffer
@@ -262,5 +266,133 @@ includes:
 				}
 			}
 		})
+	}
+}
+
+func TestEditCmdCreateWithFlag(t *testing.T) {
+	templatesDir := t.TempDir()
+	configDir := t.TempDir()
+
+	// Create config with echo as editor
+	configContent := `editor: "echo"
+includes:
+  - "*.md"
+`
+	if err := os.WriteFile(filepath.Join(configDir, "config.yaml"), []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to create config file: %v", err)
+	}
+
+	templateName := "new-template"
+	templatePath := filepath.Join(templatesDir, templateName)
+
+	// Verify template doesn't exist
+	if _, err := os.Stat(templatePath); !os.IsNotExist(err) {
+		t.Fatal("template should not exist before test")
+	}
+
+	opts := &EditOptions{
+		Stdin: strings.NewReader(""), // No input needed with --create flag
+	}
+	cmd := NewEditCmdWithOptions(templatesDir, configDir, opts)
+	cmd.SetArgs([]string{templateName, "--create"})
+
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	cmd.SetErr(&buf)
+
+	err := cmd.Execute()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify template was created
+	if _, err := os.Stat(templatePath); os.IsNotExist(err) {
+		t.Error("template directory should be created with --create flag")
+	}
+
+	if !strings.Contains(buf.String(), "Created new template") {
+		t.Errorf("output should indicate template was created, got:\n%s", buf.String())
+	}
+}
+
+func TestEditCmdCreateWithPrompt(t *testing.T) {
+	templatesDir := t.TempDir()
+	configDir := t.TempDir()
+
+	// Create config with echo as editor
+	configContent := `editor: "echo"
+includes:
+  - "*.md"
+`
+	if err := os.WriteFile(filepath.Join(configDir, "config.yaml"), []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to create config file: %v", err)
+	}
+
+	templateName := "prompt-template"
+	templatePath := filepath.Join(templatesDir, templateName)
+
+	// Simulate user typing "y" to confirm creation
+	opts := &EditOptions{
+		Stdin: strings.NewReader("y\n"),
+	}
+	cmd := NewEditCmdWithOptions(templatesDir, configDir, opts)
+	cmd.SetArgs([]string{templateName})
+
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	cmd.SetErr(&buf)
+
+	err := cmd.Execute()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify template was created
+	if _, err := os.Stat(templatePath); os.IsNotExist(err) {
+		t.Error("template directory should be created when user confirms")
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, "does not exist") {
+		t.Errorf("output should ask about non-existent template, got:\n%s", output)
+	}
+	if !strings.Contains(output, "Create it?") {
+		t.Errorf("output should ask to create, got:\n%s", output)
+	}
+	if !strings.Contains(output, "Created new template") {
+		t.Errorf("output should indicate template was created, got:\n%s", output)
+	}
+}
+
+func TestEditCmdCreateDeclined(t *testing.T) {
+	templatesDir := t.TempDir()
+	configDir := t.TempDir()
+
+	templateName := "declined-template"
+	templatePath := filepath.Join(templatesDir, templateName)
+
+	// Simulate user typing "n" to decline creation
+	opts := &EditOptions{
+		Stdin: strings.NewReader("n\n"),
+	}
+	cmd := NewEditCmdWithOptions(templatesDir, configDir, opts)
+	cmd.SetArgs([]string{templateName})
+
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	cmd.SetErr(&buf)
+
+	err := cmd.Execute()
+	if err == nil {
+		t.Fatal("expected error when user declines creation")
+	}
+
+	// Verify template was NOT created
+	if _, err := os.Stat(templatePath); !os.IsNotExist(err) {
+		t.Error("template directory should NOT be created when user declines")
+	}
+
+	if !strings.Contains(err.Error(), "not found") {
+		t.Errorf("error should indicate not found, got: %v", err)
 	}
 }
