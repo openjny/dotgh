@@ -64,10 +64,10 @@ func TestClone(t *testing.T) {
 		cmd.Dir = srcDir
 		require.NoError(t, cmd.Run())
 
-		// Clone to destination
+		// Clone to destination (use empty string for branch to use default)
 		dstDir := t.TempDir()
 		client := New(dstDir)
-		err := client.Clone(srcDir, "main")
+		err := client.Clone(srcDir, "")
 		require.NoError(t, err)
 
 		// Verify cloned file exists
