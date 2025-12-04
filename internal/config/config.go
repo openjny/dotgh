@@ -22,12 +22,20 @@ var DefaultIncludes = []string{
 	".vscode/mcp.json",
 }
 
+// SyncConfig represents the sync configuration.
+type SyncConfig struct {
+	Repo       string `yaml:"repo,omitempty"`
+	Branch     string `yaml:"branch,omitempty"`
+	AutoCommit bool   `yaml:"auto_commit,omitempty"`
+}
+
 // Config represents the dotgh configuration.
 type Config struct {
-	Editor       string   `yaml:"editor,omitempty"`
-	TemplatesDir string   `yaml:"templates_dir,omitempty"`
-	Includes     []string `yaml:"includes"`
-	Excludes     []string `yaml:"excludes,omitempty"`
+	Editor       string      `yaml:"editor,omitempty"`
+	TemplatesDir string      `yaml:"templates_dir,omitempty"`
+	Includes     []string    `yaml:"includes"`
+	Excludes     []string    `yaml:"excludes,omitempty"`
+	Sync         *SyncConfig `yaml:"sync,omitempty"`
 }
 
 // GetTemplatesDir returns the templates directory path.
@@ -149,6 +157,14 @@ func GenerateDefaultConfigContent() string {
 	sb.WriteString("# excludes:\n")
 	sb.WriteString("#   - \".github/prompts/local.prompt.md\"\n")
 	sb.WriteString("#   - \".github/prompts/secret-*.prompt.md\"\n")
+	sb.WriteString("\n")
+
+	// Sync section (commented out)
+	sb.WriteString("# sync: Configuration for syncing settings across machines\n")
+	sb.WriteString("# sync:\n")
+	sb.WriteString("#   repo: \"git@github.com:username/dotgh-sync.git\"  # Sync repository URL\n")
+	sb.WriteString("#   branch: \"main\"                                   # Branch to use\n")
+	sb.WriteString("#   auto_commit: true                                # Auto-commit on push\n")
 
 	return sb.String()
 }
