@@ -126,7 +126,8 @@ func TestInitialize(t *testing.T) {
 		syncDir := m.SyncDirPath()
 		content, err := os.ReadFile(filepath.Join(syncDir, "config.yaml"))
 		require.NoError(t, err)
-		assert.Equal(t, "test: value\n", string(content))
+		// Use Contains to handle cross-platform line endings
+		assert.Contains(t, string(content), "test: value")
 
 		_, err = os.Stat(filepath.Join(syncDir, "templates", "test", "AGENTS.md"))
 		require.NoError(t, err)
