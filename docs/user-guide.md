@@ -445,6 +445,134 @@ You can customize the templates directory location by setting `templates_dir` in
 
 ---
 
+## Syncing Configuration Across Machines
+
+The `sync` command allows you to synchronize your dotgh configuration and templates across multiple machines using a Git repository.
+
+### Setting Up Sync
+
+First, create a Git repository to store your sync data (e.g., on GitHub):
+
+```bash
+# Create a new repository for sync (e.g., github.com/username/dotgh-sync)
+# Then initialize sync locally:
+dotgh sync init git@github.com:username/dotgh-sync.git
+```
+
+### Sync Commands
+
+#### `dotgh sync init <repository>`
+
+Initialize sync with a Git repository.
+
+```bash
+# Using SSH
+dotgh sync init git@github.com:user/dotgh-sync.git
+
+# Using HTTPS
+dotgh sync init https://github.com/user/dotgh-sync.git
+
+# Specify a branch
+dotgh sync init git@github.com:user/dotgh-sync.git --branch main
+```
+
+**Options:**
+- `-b, --branch`: Branch to use for sync (default: `main`)
+
+#### `dotgh sync push`
+
+Push local configuration and templates to the remote repository.
+
+```bash
+# Push with auto-generated commit message
+dotgh sync push
+
+# Push with custom commit message
+dotgh sync push -m "Update templates for new project"
+```
+
+**Options:**
+- `-m, --message`: Custom commit message
+
+#### `dotgh sync pull`
+
+Pull configuration and templates from the remote repository.
+
+```bash
+dotgh sync pull
+```
+
+This will:
+1. Pull the latest changes from the remote
+2. Copy `config.yaml` to your local config directory
+3. Copy templates to your local templates directory
+
+#### `dotgh sync status`
+
+Show the current sync status.
+
+```bash
+dotgh sync status
+```
+
+Example output:
+
+```
+Sync Status:
+  Repository: git@github.com:user/dotgh-sync.git
+  Branch: main
+  Status: clean
+  Sync directory: ~/.config/dotgh/.sync
+```
+
+### Typical Workflow
+
+**On your primary machine:**
+
+```bash
+# 1. Initialize sync (one time)
+dotgh sync init git@github.com:user/dotgh-sync.git
+
+# 2. Push your config and templates
+dotgh sync push -m "Initial sync"
+```
+
+**On a new machine:**
+
+```bash
+# 1. Install dotgh
+curl -fsSL https://raw.githubusercontent.com/openjny/dotgh/main/install.sh | bash
+
+# 2. Initialize sync with the same repository
+dotgh sync init git@github.com:user/dotgh-sync.git
+
+# 3. Pull your config and templates
+dotgh sync pull
+```
+
+**Keeping machines in sync:**
+
+```bash
+# After making changes on any machine, push them:
+dotgh sync push -m "Updated templates"
+
+# On other machines, pull the changes:
+dotgh sync pull
+```
+
+### Sync Configuration
+
+You can configure sync defaults in your `config.yaml`:
+
+```yaml
+sync:
+  repo: "git@github.com:username/dotgh-sync.git"
+  branch: "main"
+  auto_commit: true
+```
+
+---
+
 ## Updating
 
 You can update `dotgh` using the built-in update command:
