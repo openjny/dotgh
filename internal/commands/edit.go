@@ -33,10 +33,15 @@ var editCmd = &cobra.Command{
 }
 
 func runEdit(cmd *cobra.Command, args []string) error {
-	return runEditWithDirs(cmd, args, templatesDir, config.GetConfigDir())
+	// Load config to get templates directory
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+	return runEditWithConfig(cmd, args, cfg.GetTemplatesDir(), config.GetConfigDir(), cfg)
 }
 
-func runEditWithDirs(cmd *cobra.Command, args []string, templatesDir, configDir string) error {
+func runEditWithConfig(cmd *cobra.Command, args []string, templatesDir, configDir string, cfg *config.Config) error {
 	var targetPath string
 
 	if len(args) == 0 {
@@ -62,10 +67,13 @@ func runEditWithDirs(cmd *cobra.Command, args []string, templatesDir, configDir 
 		targetPath = path
 	}
 
-	// Load config to get editor setting
-	cfg, err := config.LoadFromDir(configDir)
-	if err != nil {
-		return fmt.Errorf("load config: %w", err)
+	// Load config if not provided
+	if cfg == nil {
+		var err error
+		cfg, err = config.LoadFromDir(configDir)
+		if err != nil {
+			return fmt.Errorf("load config: %w", err)
+		}
 	}
 
 	// Build and execute editor command (use ForDir since we're opening a directory)
@@ -107,7 +115,7 @@ func NewEditCmd(customTemplatesDir, configDir string) *cobra.Command {
 		Long:  editCmdLong,
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runEditWithDirs(cmd, args, customTemplatesDir, configDir)
+			return runEditWithConfig(cmd, args, customTemplatesDir, configDir, nil)
 		},
 	}
 }

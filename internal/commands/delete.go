@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/openjny/dotgh/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -50,7 +51,12 @@ func NewDeleteCmd(customTemplatesDir string, stdin io.Reader) *cobra.Command {
 }
 
 func runDelete(cmd *cobra.Command, args []string) error {
-	return deleteTemplate(cmd, args[0], templatesDir, os.Stdin, deleteForceFlag)
+	// Load config to get templates directory
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+	return deleteTemplate(cmd, args[0], cfg.GetTemplatesDir(), os.Stdin, deleteForceFlag)
 }
 
 // deleteTemplate deletes the specified template.

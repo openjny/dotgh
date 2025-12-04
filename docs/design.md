@@ -75,6 +75,7 @@ Targets can be customized via `~/.config/dotgh/config.yaml`:
 
 ```yaml
 editor: "code --wait"  # Optional: override the default editor
+templates_dir: "~/my-templates"  # Optional: custom templates directory location
 includes:
   - "AGENTS.md"
   - ".github/agents/*.agent.md"

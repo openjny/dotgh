@@ -201,7 +201,8 @@ If the config file does not exist, default settings are used. You can create or 
 The configuration file supports the following fields:
 
 ```yaml
-editor: "code --wait"  
+editor: "code --wait"
+templates_dir: "~/my-templates"
 includes:
   - "AGENTS.md"
   - ".github/agents/*.agent.md"
@@ -227,6 +228,29 @@ If not set, dotgh uses the following priority order:
 4. Platform default (`vi` on Linux/macOS, `notepad` on Windows)
 
 For GUI editors like VS Code or Sublime Text, the `--wait` flag is automatically added to ensure the command waits until the editor is closed.
+
+### templates_dir
+
+The `templates_dir` field is optional and specifies a custom location for the templates directory. This allows you to store your templates in a location other than the default.
+
+**Default locations:**
+- Linux/macOS: `~/.config/dotgh/templates/`
+- Windows: `%LOCALAPPDATA%\dotgh\templates\`
+
+**Features:**
+- Supports tilde expansion (e.g., `~/my-templates`)
+- Can be an absolute or relative path
+
+**Example:**
+
+```yaml
+templates_dir: "~/dotfiles/dotgh-templates"
+```
+
+This is useful when:
+- You want to keep templates in a version-controlled dotfiles repository
+- You want to share templates across multiple machines via cloud storage
+- You need to organize templates in a specific location for your workflow
 
 
 ### includes:
@@ -354,6 +378,8 @@ Templates are stored following the XDG Base Directory Specification:
 |----------|----------|
 | Linux/macOS | `~/.config/dotgh/templates/` |
 | Windows | `%LOCALAPPDATA%\dotgh\templates\` |
+
+You can customize the templates directory location by setting `templates_dir` in your configuration file. See the [templates_dir](#templates_dir) section for details.
 
 ---
 
