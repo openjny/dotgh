@@ -15,7 +15,7 @@ import (
 
 // Command metadata constants
 const (
-	pullCmdUse   = "pull <template>"
+	pullCmdUse   = "pull [<template>]"
 	pullCmdShort = "Pull a template to the current directory"
 	pullCmdLong  = `Pull a template to the current directory with Git-style sync behavior.
 
@@ -25,17 +25,20 @@ deletes files that exist locally but not in the template.
 Use --merge to only add and update files without deleting.
 Use --yes to skip the confirmation prompt.
 
+If no template name is given, the default_template from config is used.
+
 Examples:
   dotgh pull my-template          # Full sync with confirmation
   dotgh pull my-template --yes    # Full sync without confirmation  
-  dotgh pull my-template --merge  # Merge only (no deletions)`
+  dotgh pull my-template --merge  # Merge only (no deletions)
+  dotgh pull                      # Use default_template from config`
 )
 
 var pullCmd = &cobra.Command{
 	Use:   pullCmdUse,
 	Short: pullCmdShort,
 	Long:  pullCmdLong,
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.RangeArgs(0, 1),
 	RunE:  runPull,
 }
 
@@ -76,7 +79,7 @@ func NewPullCmdWithOptions(customTemplatesDir, customTargetDir string, cfg *conf
 		Use:   pullCmdUse,
 		Short: pullCmdShort,
 		Long:  pullCmdLong,
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts := PullOptions{
 				MergeMode: merge,
@@ -88,7 +91,15 @@ func NewPullCmdWithOptions(customTemplatesDir, customTargetDir string, cfg *conf
 					opts.Stdin = defaultOpts.Stdin
 				}
 			}
-			return pullTemplate(cmd, args[0], customTemplatesDir, customTargetDir, opts, cfg)
+			defaultTemplate := ""
+			if cfg != nil {
+				defaultTemplate = cfg.DefaultTemplate
+			}
+			templateName, err := resolveTemplateName(args, defaultTemplate)
+			if err != nil {
+				return err
+			}
+			return pullTemplate(cmd, templateName, customTemplatesDir, customTargetDir, opts, cfg)
 		},
 	}
 	cmd.Flags().BoolVarP(&merge, "merge", "m", false, "Merge mode: only add/update files, no deletions")
@@ -108,13 +119,31 @@ func runPull(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
+	templateName, err := resolveTemplateName(args, cfg.DefaultTemplate)
+	if err != nil {
+		return err
+	}
+
 	opts := PullOptions{
 		MergeMode: pullMergeFlag,
 		Yes:       pullYesFlag,
 		Stdin:     cmd.InOrStdin(),
 	}
 
-	return pullTemplate(cmd, args[0], cfg.GetTemplatesDir(), cwd, opts, cfg)
+	return pullTemplate(cmd, templateName, cfg.GetTemplatesDir(), cwd, opts, cfg)
+}
+
+// resolveTemplateName returns the template name from args or the default template.
+// An explicit argument takes priority over the default_template config value.
+// Returns an error if neither is available.
+func resolveTemplateName(args []string, defaultTemplate string) (string, error) {
+	if len(args) > 0 {
+		return args[0], nil
+	}
+	if defaultTemplate != "" {
+		return defaultTemplate, nil
+	}
+	return "", fmt.Errorf("template name required (no default template configured)")
 }
 
 // pullTemplate pulls the specified template to the target directory.

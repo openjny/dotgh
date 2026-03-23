@@ -38,7 +38,10 @@ func executePushCmd(t *testing.T, templatesDir, sourceDir, templateName string, 
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
 
-	args := []string{templateName}
+	args := []string{}
+	if templateName != "" {
+		args = append(args, templateName)
+	}
 	if merge {
 		args = append(args, "--merge")
 	}
@@ -303,6 +306,87 @@ func TestPushRequiresTemplateName(t *testing.T) {
 
 	if err == nil {
 		t.Error("expected error when no template name provided")
+	}
+}
+
+func TestPushWithDefaultTemplate(t *testing.T) {
+	sourceDir := setupTestSourceDir(t, map[string]string{
+		"AGENTS.md": "# Default Template Content",
+	})
+	templatesDir := t.TempDir()
+
+	// No template name arg, uses default from config
+	output, err := executePushCmdWithDefaultTemplate(t, templatesDir, sourceDir, "my-default", false, true, "")
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if !strings.Contains(output, "my-default") {
+		t.Errorf("output should mention template name, got:\n%s", output)
+	}
+	if !strings.Contains(output, "Done:") {
+		t.Errorf("output should show done message, got:\n%s", output)
+	}
+
+	// Verify template was created
+	templateDir := filepath.Join(templatesDir, "my-default")
+	if _, err := os.Stat(templateDir); os.IsNotExist(err) {
+		t.Error("template directory should be created")
+	}
+	if _, err := os.Stat(filepath.Join(templateDir, "AGENTS.md")); os.IsNotExist(err) {
+		t.Error("AGENTS.md should exist in template")
+	}
+}
+
+func TestPushExplicitArgOverridesDefaultTemplate(t *testing.T) {
+	sourceDir := setupTestSourceDir(t, map[string]string{
+		"AGENTS.md": "# Source Content",
+	})
+	templatesDir := t.TempDir()
+
+	// Pass explicit "other-tmpl" arg; default_template is "default-tmpl"
+	cfg := testConfigWithDefaultTemplate("default-tmpl")
+	opts := &PushOptions{Stdin: strings.NewReader("")}
+	cmd := NewPushCmdWithOptions(templatesDir, sourceDir, cfg, opts)
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	cmd.SetErr(&buf)
+	cmd.SetArgs([]string{"other-tmpl", "--yes"})
+
+	err := cmd.Execute()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify the explicit template was created, not the default one
+	if _, err := os.Stat(filepath.Join(templatesDir, "other-tmpl")); os.IsNotExist(err) {
+		t.Error("explicit template should be created")
+	}
+	if _, err := os.Stat(filepath.Join(templatesDir, "default-tmpl")); !os.IsNotExist(err) {
+		t.Error("default template should NOT be created when explicit arg is given")
+	}
+}
+
+func TestPushNoArgNoDefaultTemplateError(t *testing.T) {
+	sourceDir := t.TempDir()
+	templatesDir := t.TempDir()
+
+	// No arg and no default_template in config
+	cfg := testConfig() // DefaultTemplate is ""
+	cmd := NewPushCmdWithOptions(templatesDir, sourceDir, cfg, nil)
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	cmd.SetErr(&buf)
+	cmd.SetArgs([]string{})
+
+	err := cmd.Execute()
+
+	if err == nil {
+		t.Error("expected error when no template name and no default_template")
+	}
+	if !strings.Contains(err.Error(), "template name required") {
+		t.Errorf("error should mention 'template name required', got: %v", err)
 	}
 }
 
