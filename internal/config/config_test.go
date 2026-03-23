@@ -544,6 +544,80 @@ func TestExpandTilde(t *testing.T) {
 	}
 }
 
+func TestLoadFromDirWithDefaultTemplate(t *testing.T) {
+	tests := []struct {
+		name                string
+		configYAML          string
+		wantDefaultTemplate string
+	}{
+		{
+			name:                "no default_template field",
+			configYAML:          "includes: []\n",
+			wantDefaultTemplate: "",
+		},
+		{
+			name: "with default_template field",
+			configYAML: `default_template: "my-default"
+includes: []
+`,
+			wantDefaultTemplate: "my-default",
+		},
+		{
+			name: "empty default_template field",
+			configYAML: `default_template: ""
+includes: []
+`,
+			wantDefaultTemplate: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tempDir := t.TempDir()
+
+			configPath := filepath.Join(tempDir, "config.yaml")
+			if err := os.WriteFile(configPath, []byte(tt.configYAML), 0644); err != nil {
+				t.Fatalf("failed to write config file: %v", err)
+			}
+
+			cfg, err := LoadFromDir(tempDir)
+			if err != nil {
+				t.Fatalf("LoadFromDir() error = %v", err)
+			}
+
+			if cfg.DefaultTemplate != tt.wantDefaultTemplate {
+				t.Errorf("DefaultTemplate = %q, want %q", cfg.DefaultTemplate, tt.wantDefaultTemplate)
+			}
+		})
+	}
+}
+
+func TestGenerateDefaultConfigContentContainsDefaultTemplate(t *testing.T) {
+	content := GenerateDefaultConfigContent()
+
+	tests := []struct {
+		name     string
+		contains string
+	}{
+		{
+			name:     "contains default_template comment",
+			contains: "# default_template:",
+		},
+		{
+			name:     "contains default_template description",
+			contains: "default template name",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if !strings.Contains(content, tt.contains) {
+				t.Errorf("GenerateDefaultConfigContent() should contain %q\nGot:\n%s", tt.contains, content)
+			}
+		})
+	}
+}
+
 func TestLoadFromDirWithTemplatesDir(t *testing.T) {
 	tests := []struct {
 		name             string

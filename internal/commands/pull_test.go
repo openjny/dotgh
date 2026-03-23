@@ -41,7 +41,10 @@ func executePullCmd(t *testing.T, templatesDir, targetDir, templateName string, 
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
 
-	args := []string{templateName}
+	args := []string{}
+	if templateName != "" {
+		args = append(args, templateName)
+	}
 	if merge {
 		args = append(args, "--merge")
 	}
@@ -280,6 +283,91 @@ func TestPullRequiresTemplateName(t *testing.T) {
 
 	if err == nil {
 		t.Error("expected error when no template name provided")
+	}
+}
+
+func TestPullWithDefaultTemplate(t *testing.T) {
+	templatesDir := setupTestTemplateWithFiles(t, "my-default", map[string]string{
+		"AGENTS.md": "# Default Template",
+	})
+	targetDir := t.TempDir()
+
+	// No template name arg, uses default from config
+	output, err := executePullCmdWithDefaultTemplate(t, templatesDir, targetDir, "my-default", false, true, "")
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if !strings.Contains(output, "my-default") {
+		t.Errorf("output should mention template name, got:\n%s", output)
+	}
+	if !strings.Contains(output, "Done:") {
+		t.Errorf("output should show done message, got:\n%s", output)
+	}
+
+	// Verify file was created
+	if _, err := os.Stat(filepath.Join(targetDir, "AGENTS.md")); os.IsNotExist(err) {
+		t.Error("file should exist after pull with default template")
+	}
+}
+
+func TestPullExplicitArgOverridesDefaultTemplate(t *testing.T) {
+	templatesDir := t.TempDir()
+
+	// Create two templates
+	createTestFiles(t, filepath.Join(templatesDir, "default-tmpl"), map[string]string{
+		"AGENTS.md": "# Default Template",
+	})
+	createTestFiles(t, filepath.Join(templatesDir, "other-tmpl"), map[string]string{
+		"AGENTS.md": "# Other Template",
+	})
+
+	targetDir := t.TempDir()
+
+	// Pass explicit "other-tmpl" arg; default_template is "default-tmpl"
+	cfg := testConfigWithDefaultTemplate("default-tmpl")
+	opts := &PullOptions{Stdin: strings.NewReader("")}
+	cmd := NewPullCmdWithOptions(templatesDir, targetDir, cfg, opts)
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	cmd.SetErr(&buf)
+	cmd.SetArgs([]string{"other-tmpl", "--yes"})
+
+	err := cmd.Execute()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify other-tmpl content was applied
+	content, err := os.ReadFile(filepath.Join(targetDir, "AGENTS.md"))
+	if err != nil {
+		t.Fatalf("file should exist: %v", err)
+	}
+	if string(content) != "# Other Template" {
+		t.Errorf("explicit arg should override default_template, got: %s", string(content))
+	}
+}
+
+func TestPullNoArgNoDefaultTemplateError(t *testing.T) {
+	templatesDir := setupTestTemplatesDir(t, []string{"my-template"})
+	targetDir := t.TempDir()
+
+	// No arg and no default_template in config
+	cfg := testConfig() // DefaultTemplate is ""
+	cmd := NewPullCmdWithOptions(templatesDir, targetDir, cfg, nil)
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	cmd.SetErr(&buf)
+	cmd.SetArgs([]string{})
+
+	err := cmd.Execute()
+
+	if err == nil {
+		t.Error("expected error when no template name and no default_template")
+	}
+	if !strings.Contains(err.Error(), "template name required") {
+		t.Errorf("error should mention 'template name required', got: %v", err)
 	}
 }
 

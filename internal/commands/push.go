@@ -14,7 +14,7 @@ import (
 
 // Command metadata constants for push
 const (
-	pushCmdUse   = "push <template>"
+	pushCmdUse   = "push [<template>]"
 	pushCmdShort = "Save the current directory's settings as a template"
 	pushCmdLong  = `Save the current directory's settings as a template with Git-style sync behavior.
 
@@ -26,17 +26,20 @@ Use --yes to skip the confirmation prompt.
 
 If the template doesn't exist, it will be created.
 
+If no template name is given, the default_template from config is used.
+
 Examples:
   dotgh push my-template          # Full sync with confirmation
   dotgh push my-template --yes    # Full sync without confirmation
-  dotgh push my-template --merge  # Merge only (no deletions)`
+  dotgh push my-template --merge  # Merge only (no deletions)
+  dotgh push                      # Use default_template from config`
 )
 
 var pushCmd = &cobra.Command{
 	Use:   pushCmdUse,
 	Short: pushCmdShort,
 	Long:  pushCmdLong,
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.RangeArgs(0, 1),
 	RunE:  runPush,
 }
 
@@ -77,7 +80,7 @@ func NewPushCmdWithOptions(customTemplatesDir, customSourceDir string, cfg *conf
 		Use:   pushCmdUse,
 		Short: pushCmdShort,
 		Long:  pushCmdLong,
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts := PushOptions{
 				MergeMode: merge,
@@ -89,7 +92,15 @@ func NewPushCmdWithOptions(customTemplatesDir, customSourceDir string, cfg *conf
 					opts.Stdin = defaultOpts.Stdin
 				}
 			}
-			return pushTemplate(cmd, args[0], customTemplatesDir, customSourceDir, opts, cfg)
+			defaultTemplate := ""
+			if cfg != nil {
+				defaultTemplate = cfg.DefaultTemplate
+			}
+			templateName, err := resolveTemplateName(args, defaultTemplate)
+			if err != nil {
+				return err
+			}
+			return pushTemplate(cmd, templateName, customTemplatesDir, customSourceDir, opts, cfg)
 		},
 	}
 	cmd.Flags().BoolVarP(&merge, "merge", "m", false, "Merge mode: only add/update files, no deletions")
@@ -109,13 +120,18 @@ func runPush(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
+	templateName, err := resolveTemplateName(args, cfg.DefaultTemplate)
+	if err != nil {
+		return err
+	}
+
 	opts := PushOptions{
 		MergeMode: pushMergeFlag,
 		Yes:       pushYesFlag,
 		Stdin:     cmd.InOrStdin(),
 	}
 
-	return pushTemplate(cmd, args[0], cfg.GetTemplatesDir(), cwd, opts, cfg)
+	return pushTemplate(cmd, templateName, cfg.GetTemplatesDir(), cwd, opts, cfg)
 }
 
 // pushTemplate saves the current directory's target files to a template.

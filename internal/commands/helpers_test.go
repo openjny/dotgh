@@ -1,8 +1,10 @@
 package commands
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/openjny/dotgh/internal/config"
@@ -22,6 +24,70 @@ func testConfigWithExcludes(excludes []string) *config.Config {
 		Includes: config.DefaultIncludes,
 		Excludes: excludes,
 	}
+}
+
+// testConfigWithDefaultTemplate returns a config with the default includes and specified default template.
+func testConfigWithDefaultTemplate(defaultTemplate string) *config.Config {
+	return &config.Config{
+		Includes:        config.DefaultIncludes,
+		DefaultTemplate: defaultTemplate,
+	}
+}
+
+// executePullCmdWithDefaultTemplate runs the pull command without a template name argument,
+// using a config that has the given default template set.
+func executePullCmdWithDefaultTemplate(t *testing.T, templatesDir, targetDir, defaultTemplate string, merge, yes bool, stdin string) (string, error) {
+	t.Helper()
+	cfg := testConfigWithDefaultTemplate(defaultTemplate)
+
+	opts := &PullOptions{
+		Stdin: strings.NewReader(stdin),
+	}
+
+	cmd := NewPullCmdWithOptions(templatesDir, targetDir, cfg, opts)
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	cmd.SetErr(&buf)
+
+	args := []string{}
+	if merge {
+		args = append(args, "--merge")
+	}
+	if yes {
+		args = append(args, "--yes")
+	}
+	cmd.SetArgs(args)
+
+	err := cmd.Execute()
+	return buf.String(), err
+}
+
+// executePushCmdWithDefaultTemplate runs the push command without a template name argument,
+// using a config that has the given default template set.
+func executePushCmdWithDefaultTemplate(t *testing.T, templatesDir, sourceDir, defaultTemplate string, merge, yes bool, stdin string) (string, error) {
+	t.Helper()
+	cfg := testConfigWithDefaultTemplate(defaultTemplate)
+
+	opts := &PushOptions{
+		Stdin: strings.NewReader(stdin),
+	}
+
+	cmd := NewPushCmdWithOptions(templatesDir, sourceDir, cfg, opts)
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	cmd.SetErr(&buf)
+
+	args := []string{}
+	if merge {
+		args = append(args, "--merge")
+	}
+	if yes {
+		args = append(args, "--yes")
+	}
+	cmd.SetArgs(args)
+
+	err := cmd.Execute()
+	return buf.String(), err
 }
 
 // createTestFile creates a file at the given path with the specified content.

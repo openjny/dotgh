@@ -24,10 +24,11 @@ var DefaultIncludes = []string{
 
 // Config represents the dotgh configuration.
 type Config struct {
-	Editor       string   `yaml:"editor,omitempty"`
-	TemplatesDir string   `yaml:"templates_dir,omitempty"`
-	Includes     []string `yaml:"includes"`
-	Excludes     []string `yaml:"excludes,omitempty"`
+	Editor          string   `yaml:"editor,omitempty"`
+	TemplatesDir    string   `yaml:"templates_dir,omitempty"`
+	DefaultTemplate string   `yaml:"default_template,omitempty"`
+	Includes        []string `yaml:"includes"`
+	Excludes        []string `yaml:"excludes,omitempty"`
 }
 
 // GetTemplatesDir returns the templates directory path.
@@ -132,6 +133,12 @@ func GenerateDefaultConfigContent() string {
 	sb.WriteString("#   Windows: %LOCALAPPDATA%\\dotgh\\templates\\\n")
 	sb.WriteString("# Supports tilde expansion (e.g., \"~/my-templates\").\n")
 	sb.WriteString("# templates_dir: \"\"\n")
+	sb.WriteString("\n")
+
+	// Default template section (commented out)
+	sb.WriteString("# default_template: Specify the default template name used when no template argument is given.\n")
+	sb.WriteString("# Allows running 'dotgh pull' and 'dotgh push' without specifying a template name.\n")
+	sb.WriteString("# default_template: \"\"\n")
 	sb.WriteString("\n")
 
 	// Includes section
